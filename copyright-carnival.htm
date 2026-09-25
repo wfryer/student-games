@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copyright Carnival - Critter Cove IP Board Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #030712;
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+        }
+        .font-game {
+            font-family: 'Fredoka One', cursive;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+        }
+        .custom-btn {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4);
+        }
+        .custom-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.4);
+        }
+        .custom-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+        }
+        canvas {
+            touch-action: none;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.6)); }
+            50% { filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.9)); }
+        }
+        .glow-active {
+            animation: pulse-glow 2s infinite;
+        }
+        .item-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .item-card:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+    </style>
+
+    <script>
+        // Sound Engine using Web Audio API (No external sound files required)
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            }
+            playTone(freq, duration, type = 'sine') {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            playJump() {
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(720, this.ctx.currentTime + 0.25);
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.25);
+                } catch(e) {}
+            }
+            playDiceHit() {
+                this.init();
+                this.playTone(880, 0.1, 'square');
+                setTimeout(() => this.playTone(1174, 0.15, 'triangle'), 80);
+            }
+            playCoin() {
+                this.init();
+                this.playTone(987, 0.08, 'sine');
+                setTimeout(() => this.playTone(1318, 0.2, 'sine'), 90);
+            }
+            playStar() {
+                this.init();
+                [523, 659, 783, 1046, 1318].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 0.18, 'triangle'), i * 80);
+                });
+            }
+            playBad() {
+                this.init();
+                this.playTone(180, 0.3, 'sawtooth');
+            }
+            playSuccess() {
+                this.init();
+                [440, 554, 659, 880].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 0.12, 'sine'), i * 60);
+                });
+            }
+        }
+        window.sfx = new SoundEngine();
+
+        // Global State Definition
+        window.gameState = {
+            humanChar: 'seal',
+            difficulty: 'Medium',
+            totalRounds: 10,
+            currentRound: 1,
+            turnIndex: 0,
+            isRolling: false,
+            isMoving: false,
+            players: [],
+            starNodeIndex: 22,
+            items: [
+                { id: 'double_dice', name: 'Double Dice', desc: 'Roll 2 dice on your next turn.', cost: 5, icon: '🎲' },
+                { id: 'dmca_shield', name: 'Safe Harbor Shield', desc: 'Blocks 1 negative space effect or DMCA penalty.', cost: 8, icon: '🛡️' },
+                { id: 'star_magnet', name: 'Star Magnet', desc: 'Reduces Star cost to 12 coins when you reach it.', cost: 12, icon: '𝝮' },
+                { id: 'fair_use_brief', name: 'Fair Use Brief', desc: 'Instantly gain +10 Coins on land.', cost: 7, icon: '📜' }
+            ]
+        };
+
+        // Character definitions with abilities
+        window.CHARACTERS = {
+            seal: { name: 'Seal', desc: 'Smooth Slide: +2 bonus coins on Blue spaces; immune to Red space losses.', color: '#38bdf8' },
+            fawn: { name: 'Fawn', desc: 'Gentle Step: Re-rolls any dice roll lower than 3.', color: '#fb923c' },
+            hyena: { name: 'Hyena', desc: 'Laughing Claim: Steals 2 coins from opponents passed on board.', color: '#facc15' },
+            owl: { name: 'Owl', desc: 'Public Domain Preview: Free item every 3 rounds; +1 coin per quiz.', color: '#a855f7' },
+            monkey: { name: 'Monkey', desc: 'Playful Acrobat: +3 bonus coins when landing on Event or Quiz spaces.', color: '#f43f5e' },
+            penguin: { name: 'Penguin', desc: 'Open Source Sprint: Minimum dice roll is always 3.', color: '#34d399' }
+        };
+
+        // Setup Screen Handlers
+        window.setDifficulty = function(diff) {
+            window.gameState.difficulty = diff;
+            ['Easy', 'Medium', 'Hard'].forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                if (btn) btn.className = (d === diff) 
+                    ? "diff-btn flex-1 py-2 rounded-xl border-2 border-amber-500 bg-amber-500/20 text-amber-300 font-bold"
+                    : "diff-btn flex-1 py-2 rounded-xl border-2 border-slate-700 bg-slate-800 font-bold hover:border-amber-400";
+            });
+        };
+
+        window.setRounds = function(r) {
+            window.gameState.totalRounds = r;
+            [5, 10, 15].forEach(num => {
+                const btn = document.getElementById(`rounds-${num}`);
+                if (btn) btn.className = (num === r)
+                    ? "round-btn flex-1 py-2 rounded-xl border-2 border-amber-500 bg-amber-500/20 text-amber-300 font-bold"
+                    : "round-btn flex-1 py-2 rounded-xl border-2 border-slate-700 bg-slate-800 font-bold hover:border-amber-400";
+            });
+        };
+
+        window.selectChar = function(charKey) {
+            window.gameState.humanChar = charKey;
+            window.renderCharacterSelector();
+        };
+
+        window.renderCharacterSelector = function() {
+            const grid = document.getElementById('character-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            Object.keys(window.CHARACTERS).forEach(key => {
+                const c = window.CHARACTERS[key];
+                const isSelected = window.gameState.humanChar === key;
+                const card = document.createElement('div');
+                card.onclick = () => window.selectChar(key);
+                card.className = `cursor-pointer rounded-2xl p-3 text-center border-2 transition-all duration-200 flex flex-col items-center justify-between ${
+                    isSelected ? 'border-amber-400 bg-amber-500/20 shadow-lg shadow-amber-500/20 scale-105' : 'border-slate-800 bg-slate-900/80 hover:border-slate-600'
+                }`;
+                
+                // Draw dynamic preview canvas for character face
+                const canvasId = `char-preview-${key}`;
+                card.innerHTML = `
+                    <canvas id="${canvasId}" width="80" height="80" class="mb-1"></canvas>
+                    <div class="font-game text-base text-white">${c.name}</div>
+                    <div class="text-[10px] text-slate-300 mt-1 leading-tight">${c.desc}</div>
+                `;
+                grid.appendChild(card);
+                
+                setTimeout(() => {
+                    const cvs = document.getElementById(canvasId);
+                    if (cvs && window.drawAnimalFace) {
+                        const ctx = cvs.getContext('2d');
+                        ctx.clearRect(0, 0, 80, 80);
+                        window.drawAnimalFace(ctx, key, 40, 40, 32);
+                    }
+                }, 10);
+            });
+        };
+    </script>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between overflow-hidden bg-slate-950">
+
+    <div id="setup-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md">
+        <div class="glass-panel max-w-4xl w-full rounded-3xl p-6 md:p-8 flex flex-col gap-6 max-h-[95vh] overflow-y-auto border-4 border-amber-500/50 shadow-2xl">
+            <div class="text-center">
+                <h1 class="font-game text-4xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-300 drop-shadow-md">
+                    COPYRIGHT CARNIVAL
+                </h1>
+                <p class="text-slate-300 font-bold mt-1 text-sm md:text-base">Critter Cove IP Festival Board Game - Sail Canal Town & Collect Masterpiece Stars!</p>
+            </div>
+
+            <div>
+                <h2 class="font-game text-xl text-amber-400 mb-3 flex items-center gap-2">
+                    <span>🐾</span> 1. Choose Your Hero Animal
+                </h2>
+                <div id="character-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                    <!-- Dynamic Cards Rendered via JS -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                <div>
+                    <label class="font-game text-amber-400 block mb-2">AI Opponents Difficulty</label>
+                    <div class="flex gap-2">
+                        <button onclick="window.setDifficulty('Easy')" id="diff-Easy" class="diff-btn flex-1 py-2 rounded-xl border-2 border-slate-700 bg-slate-800 font-bold hover:border-amber-400">Easy</button>
+                        <button onclick="window.setDifficulty('Medium')" id="diff-Medium" class="diff-btn flex-1 py-2 rounded-xl border-2 border-amber-500 bg-amber-500/20 text-amber-300 font-bold">Medium</button>
+                        <button onclick="window.setDifficulty('Hard')" id="diff-Hard" class="diff-btn flex-1 py-2 rounded-xl border-2 border-slate-700 bg-slate-800 font-bold hover:border-amber-400">Hard</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="font-game text-amber-400 block mb-2">Game Length (Rounds)</label>
+                    <div class="flex gap-2">
+                        <button onclick="window.setRounds(5)" id="rounds-5" class="round-btn flex-1 py-2 rounded-xl border-2 border-slate-700 bg-slate-800 font-bold hover:border-amber-400">5 Fast</button>
+                        <button onclick="window.setRounds(10)" id="rounds-10" class="round-btn flex-1 py-2 rounded-xl border-2 border-amber-500 bg-amber-500/20 text-amber-300 font-bold">10 Standard</button>
+                        <button onclick="window.setRounds(15)" id="rounds-15" class="round-btn flex-1 py-2 rounded-xl border-2 border-slate-700 bg-slate-800 font-bold hover:border-amber-400">15 Long</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.startGame()" class="custom-btn w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-game text-2xl rounded-2xl border-2 border-amber-300 shadow-lg tracking-wider">
+                🚀 START CARNIVAL GAME
+            </button>
+        </div>
+    </div>
+
+    <div id="game-ui" class="hidden h-full w-full flex flex-col justify-between p-2 md:p-4">
+        <!-- Top HUD Header -->
+        <header class="flex flex-wrap items-center justify-between gap-2 glass-panel p-3 rounded-2xl border-amber-500/30 z-20">
+            <div class="flex items-center gap-3">
+                <div class="font-game text-2xl text-amber-400">COPYRIGHT CARNIVAL</div>
+                <div class="bg-slate-800/90 border border-slate-700 px-3 py-1 rounded-xl text-sm font-bold text-slate-300">
+                    Round <span id="hud-round" class="text-amber-400">1</span> / <span id="hud-max-round">10</span>
+                </div>
+            </div>
+
+            <!-- Player Status Strip -->
+            <div id="player-status-bar" class="flex gap-2 overflow-x-auto py-1">
+                <!-- Dynamic Player HUD Cards -->
+            </div>
+
+            <button onclick="window.openShopModal()" class="custom-btn px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-game rounded-xl text-sm flex items-center gap-2 border border-amber-300">
+                🛒 IP SHOP
+            </button>
+        </header>
+
+        <!-- Main Board Canvas Container -->
+        <main class="relative flex-1 my-2 rounded-3xl overflow-hidden border-4 border-slate-800 bg-slate-900 shadow-2xl flex items-center justify-center">
+            <canvas id="board-canvas" class="w-full h-full block"></canvas>
+
+            <!-- Turn Banner Overlay -->
+            <div id="turn-banner" class="absolute top-4 left-1/2 -translate-x-1/2 glass-panel px-6 py-2 rounded-2xl border-2 border-amber-400/50 flex items-center gap-3 shadow-xl pointer-events-none">
+                <span id="turn-banner-avatar" class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-800"></span>
+                <span id="turn-banner-text" class="font-game text-xl text-amber-300">Seal's Turn!</span>
+            </div>
+
+            <!-- Roll Action Button -->
+            <div class="absolute bottom-6 right-6 z-20">
+                <button id="roll-btn" onclick="window.rollDice()" class="custom-btn px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-game text-2xl rounded-2xl border-2 border-emerald-300 shadow-2xl flex items-center gap-3">
+                    🎲 ROLL DICE
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Full-Body Animal Jump Dice Roll Overlay -->
+    <div id="dice-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+        <div class="flex flex-col items-center gap-4">
+            <canvas id="dice-jump-canvas" width="300" height="320" class="rounded-2xl"></canvas>
+            <div id="dice-result-text" class="font-game text-4xl text-amber-300 drop-shadow-md animate-bounce">JUMPING!</div>
+        </div>
+    </div>
+
+    <!-- IP Shop Modal -->
+    <div id="shop-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-amber-500 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-game text-2xl text-amber-400">🏬 Critter Cove IP Shop</h3>
+                <button onclick="window.closeShopModal()" class="text-slate-400 hover:text-white font-bold text-xl">✕</button>
+            </div>
+            <div id="shop-item-list" class="flex flex-col gap-3">
+                <!-- Dynamic Items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Minigame Overlay Modal -->
+    <div id="minigame-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6 bg-slate-950/90 backdrop-blur-lg">
+        <div class="glass-panel max-w-4xl w-full rounded-3xl p-4 md:p-6 border-4 border-amber-500/60 flex flex-col gap-4 h-[92vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                    <h2 id="mg-title" class="font-game text-2xl md:text-3xl text-amber-400">Fair Use Defense</h2>
+                    <p id="mg-desc" class="text-xs md:text-sm text-slate-300 font-bold">Catch legal transformative works and avoid copyright infringement traps!</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="bg-amber-500/20 border border-amber-500/50 px-4 py-2 rounded-xl text-center">
+                        <div class="text-[10px] text-amber-300 uppercase font-bold">Time Left</div>
+                        <div id="mg-timer" class="font-game text-2xl text-amber-400">18s</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minigame Interactive Screen -->
+            <div class="relative flex-1 bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-800 flex flex-col items-center justify-center">
+                <canvas id="mg-canvas" class="w-full h-full block"></canvas>
+                <!-- Real-time Educational Tip Box overlay -->
+                <div id="mg-edu-tip" class="absolute bottom-3 left-4 right-4 bg-slate-950/90 border border-amber-500/50 p-2.5 rounded-xl text-center text-xs text-amber-200 font-bold backdrop-blur-md transition-all pointer-events-none">
+                    💡 Tip: Catch Transformative Fair Use, Public Domain & Creative Commons items! Avoid Infringement traps!
+                </div>
+            </div>
+
+            <!-- Minigame Controls Bar -->
+            <div id="mg-controls" class="flex justify-center gap-4 py-2">
+                <!-- Dynamic Minigame Action Buttons -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Message Modal -->
+    <div id="msg-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-6 text-center border-2 border-amber-400/60 flex flex-col items-center gap-4">
+            <div id="msg-icon" class="text-5xl">📜</div>
+            <h3 id="msg-title" class="font-game text-2xl text-amber-300">Fair Use Space!</h3>
+            <p id="msg-text" class="text-slate-300 text-sm leading-relaxed">You created an educational review video. The Fair Use Doctrine protects your clip! Gain +3 Copyright Coins.</p>
+            <button onclick="window.closeMsgModal()" class="custom-btn px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-game rounded-xl">
+                CONTINUE
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Drawing custom vector animal faces with expressive features
+        window.drawAnimalFace = function(ctx, type, x, y, radius) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            if (type === 'seal') {
+                // Head
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                // Snout
+                ctx.fillStyle = '#e0f2fe';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.2, radius * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+                // Nose
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.05, radius * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                // Whiskers
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 2;
+                [-1, 1].forEach(dir => {
+                    ctx.beginPath();
+                    ctx.moveTo(dir * radius * 0.2, radius * 0.2);
+                    ctx.lineTo(dir * radius * 0.8, radius * 0.1);
+                    ctx.moveTo(dir * radius * 0.2, radius * 0.3);
+                    ctx.lineTo(dir * radius * 0.8, radius * 0.35);
+                    ctx.stroke();
+                });
+                // Big Sparkling Eyes
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#0284c7';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.35, -radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.3, -radius * 0.25, radius * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Smile
+                ctx.strokeStyle = '#0369a1';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.2, radius * 0.2, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+
+            } else if (type === 'fawn') {
+                // Ears
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#fb923c';
+                    ctx.beginPath();
+                    ctx.ellipse(dir * radius * 0.7, -radius * 0.6, radius * 0.25, radius * 0.5, dir * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Head
+                ctx.fillStyle = '#fb923c';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                // Snout
+                ctx.fillStyle = '#ffedd5';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.3, radius * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                // Nose
+                ctx.fillStyle = '#7c2d12';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.1, radius * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                // Eyes
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#451a03';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.38, -radius * 0.15, radius * 0.22, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.32, -radius * 0.22, radius * 0.09, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // White Spots
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(-radius * 0.5, -radius * 0.5, radius * 0.1, 0, Math.PI * 2);
+                ctx.arc(radius * 0.5, -radius * 0.5, radius * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (type === 'hyena') {
+                // Round Ears
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#ca8a04';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.75, -radius * 0.65, radius * 0.38, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Head
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                // Dark muzzle
+                ctx.fillStyle = '#854d0e';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.25, radius * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+                // Nose
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.1, radius * 0.16, 0, Math.PI * 2);
+                ctx.fill();
+                // Cheeky Eyes
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#713f12';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.38, -radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.34, -radius * 0.24, radius * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Laughing mouth
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.3, radius * 0.3, 0, Math.PI);
+                ctx.fill();
+
+            } else if (type === 'owl') {
+                // Head
+                ctx.fillStyle = '#a855f7';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                // Eye Rings
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#f3e8ff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.38, -radius * 0.1, radius * 0.42, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#581c87';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.38, -radius * 0.1, radius * 0.25, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.32, -radius * 0.16, radius * 0.1, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Curved Beak
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(radius * 0.18, radius * 0.35);
+                ctx.lineTo(-radius * 0.18, radius * 0.35);
+                ctx.closePath();
+                ctx.fill();
+
+            } else if (type === 'monkey') {
+                // Round Ears
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#b45309';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.85, 0, radius * 0.35, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fde68a';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.85, 0, radius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Head
+                ctx.fillStyle = '#f43f5e';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                // Peach face plate
+                ctx.fillStyle = '#fde68a';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.1, radius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                // Nose
+                ctx.fillStyle = '#881337';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.1, radius * 0.1, 0, Math.PI * 2);
+                ctx.fill();
+                // Eyes
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#4c0519';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.3, -radius * 0.15, radius * 0.18, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.26, -radius * 0.2, radius * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Big Happy Smile
+                ctx.strokeStyle = '#9f1239';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.15, radius * 0.35, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+
+            } else if (type === 'penguin') {
+                // Head
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                // White face plate
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, radius * 0.15, radius * 0.65, 0, Math.PI * 2);
+                ctx.fill();
+                // Beak
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.moveTo(-radius * 0.2, radius * 0.1);
+                ctx.lineTo(radius * 0.2, radius * 0.1);
+                ctx.lineTo(0, radius * 0.45);
+                ctx.closePath();
+                ctx.fill();
+                // Sparkling Eyes
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.32, -radius * 0.1, radius * 0.18, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.28, -radius * 0.15, radius * 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // Pink cheeks
+                [-1, 1].forEach(dir => {
+                    ctx.fillStyle = '#f472b6';
+                    ctx.beginPath();
+                    ctx.arc(dir * radius * 0.5, radius * 0.2, radius * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            ctx.restore();
+        };
+
+        // Full Body Animal Draw (for Jump Dice Animation)
+        window.drawAnimalFullBody = function(ctx, type, x, y, size, jumpOffset = 0) {
+            ctx.save();
+            ctx.translate(x, y - jumpOffset);
+
+            // Draw shadow on ground if jumping
+            if (jumpOffset > 0) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.beginPath();
+                ctx.ellipse(0, jumpOffset + size * 0.6, size * 0.5, size * 0.15, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Body
+            const charColor = (window.CHARACTERS[type] || {}).color || '#38bdf8';
+            ctx.fillStyle = charColor;
+            ctx.beginPath();
+            ctx.arc(0, size * 0.2, size * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Arms/Flippers raised in jump
+            [-1, 1].forEach(dir => {
+                ctx.fillStyle = charColor;
+                ctx.beginPath();
+                ctx.ellipse(dir * size * 0.45, -size * 0.1, size * 0.12, size * 0.3, dir * (jumpOffset > 0 ? -0.8 : 0.4), 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Head on top
+            window.drawAnimalFace(ctx, type, 0, -size * 0.2, size * 0.35);
+
+            ctx.restore();
+        };
+    </script>
+
+    <script>
+        // Venice-inspired Canal Town Map Path Nodes (28 Nodes)
+        window.BOARD_NODES = [
+            { x: 100, y: 120, type: 'start', label: 'START' },
+            { x: 180, y: 120, type: 'blue', label: '+3 Coins' },
+            { x: 260, y: 120, type: 'shop', label: 'IP Shop' },
+            { x: 340, y: 120, type: 'blue', label: '+3 Coins' },
+            { x: 420, y: 120, type: 'quiz', label: 'Legal Quiz' },
+            { x: 500, y: 120, type: 'red', label: '-2 Coins' },
+            { x: 580, y: 120, type: 'blue', label: '+3 Coins' },
+            { x: 660, y: 120, type: 'dmca', label: 'DMCA Trap' },
+            { x: 720, y: 180, type: 'blue', label: '+3 Coins' },
+            { x: 720, y: 260, type: 'star', label: 'STAR!' },
+            { x: 720, y: 340, type: 'quiz', label: 'Legal Quiz' },
+            { x: 720, y: 420, type: 'blue', label: '+3 Coins' },
+            { x: 640, y: 460, type: 'shop', label: 'IP Shop' },
+            { x: 560, y: 460, type: 'blue', label: '+3 Coins' },
+            { x: 480, y: 460, type: 'red', label: '-2 Coins' },
+            { x: 400, y: 460, type: 'quiz', label: 'Legal Quiz' },
+            { x: 320, y: 460, type: 'blue', label: '+3 Coins' },
+            { x: 240, y: 460, type: 'dmca', label: 'DMCA Trap' },
+            { x: 160, y: 460, type: 'blue', label: '+3 Coins' },
+            { x: 100, y: 400, type: 'shop', label: 'IP Shop' },
+            { x: 100, y: 320, type: 'quiz', label: 'Legal Quiz' },
+            { x: 100, y: 240, type: 'star', label: 'STAR!' },
+            { x: 100, y: 180, type: 'blue', label: '+3 Coins' }
+        ];
+
+        // Start Game Handler
+        window.startGame = function() {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+
+            const allKeys = Object.keys(window.CHARACTERS);
+            const humanKey = window.gameState.humanChar;
+            const aiKeys = allKeys.filter(k => k !== humanKey).slice(0, 3);
+
+            window.gameState.players = [
+                { id: 'p0', name: 'You (' + window.CHARACTERS[humanKey].name + ')', key: humanKey, isAI: false, coins: 15, stars: 0, nodeIndex: 0, items: ['double_dice'] },
+                { id: 'p1', name: 'AI ' + window.CHARACTERS[aiKeys[0]].name, key: aiKeys[0], isAI: true, coins: 15, stars: 0, nodeIndex: 0, items: [] },
+                { id: 'p2', name: 'AI ' + window.CHARACTERS[aiKeys[1]].name, key: aiKeys[1], isAI: true, coins: 15, stars: 0, nodeIndex: 0, items: [] },
+                { id: 'p3', name: 'AI ' + window.CHARACTERS[aiKeys[2]].name, key: aiKeys[2], isAI: true, coins: 15, stars: 0, nodeIndex: 0, items: [] }
+            ];
+
+            window.gameState.currentRound = 1;
+            window.gameState.turnIndex = 0;
+            document.getElementById('hud-max-round').innerText = window.gameState.totalRounds;
+
+            window.initBoardCanvas();
+            window.updateHUD();
+            window.updateTurnBanner();
+        };
+
+        window.updateHUD = function() {
+            const container = document.getElementById('player-status-bar');
+            if (!container) return;
+            container.innerHTML = '';
+
+            window.gameState.players.forEach((p, i) => {
+                const isCurrentTurn = i === window.gameState.turnIndex;
+                const charObj = window.CHARACTERS[p.key];
+                const card = document.createElement('div');
+                card.className = `glass-panel px-3 py-1.5 rounded-xl border flex items-center gap-2 text-xs transition-all ${
+                    isCurrentTurn ? 'border-amber-400 bg-amber-500/20 scale-105 shadow-md' : 'border-slate-800 bg-slate-900/60'
+                }`;
+                card.innerHTML = `
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px]" style="background-color:${charObj.color}">
+                        ${p.name[0]}
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-[11px]">${p.name}</div>
+                        <div class="flex items-center gap-2 font-game text-slate-300">
+                            <span class="text-amber-400">🪙 ${p.coins}</span>
+                            <span class="text-yellow-300">⭐ ${p.stars}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('hud-round').innerText = window.gameState.currentRound;
+        };
+
+        window.updateTurnBanner = function() {
+            const p = window.gameState.players[window.gameState.turnIndex];
+            const charObj = window.CHARACTERS[p.key];
+            document.getElementById('turn-banner-text').innerText = p.name + "'s Turn!";
+            const avatar = document.getElementById('turn-banner-avatar');
+            avatar.style.backgroundColor = charObj.color;
+            avatar.innerText = p.name[0];
+
+            const rollBtn = document.getElementById('roll-btn');
+            if (p.isAI) {
+                rollBtn.disabled = true;
+                rollBtn.classList.add('opacity-50', 'pointer-events-none');
+                setTimeout(() => window.rollDice(), 1000);
+            } else {
+                rollBtn.disabled = false;
+                rollBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        };
+    </script>
+
+    <script>
+        window.initBoardCanvas = function() {
+            const canvas = document.getElementById('board-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+                window.renderBoard();
+            }
+            window.addEventListener('resize', resize);
+            resize();
+        };
+
+        window.renderBoard = function() {
+            const canvas = document.getElementById('board-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Turquoise Canal Water Background
+            const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+            bgGrad.addColorStop(0, '#0284c7');
+            bgGrad.addColorStop(1, '#0e7490');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Animated Water Ripple Texture
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < w; i += 70) {
+                for (let j = 0; j < h; j += 45) {
+                    ctx.beginPath();
+                    ctx.arc(i + Math.sin(j + Date.now()*0.001) * 12, j, 18, 0, Math.PI);
+                    ctx.stroke();
+                }
+            }
+
+            // Central Island (3D Beveled Cobblestone Plaza)
+            // Island Base Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.beginPath();
+            ctx.roundRect(144, 168, w - 280, h - 320, 36);
+            ctx.fill();
+
+            // Island 3D Extruded Wall
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.roundRect(140, 164, w - 280, h - 320, 32);
+            ctx.fill();
+
+            // Top Surface
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.roundRect(140, 156, w - 280, h - 320, 32);
+            ctx.fill();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // 3D Central Landmark Building (Copyright Town Hall)
+            const cx = w / 2;
+            const cy = h / 2 - 10;
+
+            // Building Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.fillRect(cx - 75, cy - 25, 150, 80);
+
+            // Building Side Walls (3D Extrusion)
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(cx - 80, cy - 35, 160, 15);
+
+            // Front Facade
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(cx - 80, cy - 50, 160, 60);
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(cx - 80, cy - 50, 160, 60);
+
+            // Columns
+            ctx.fillStyle = '#cbd5e1';
+            [-60, -20, 20, 60].forEach(offset => {
+                ctx.fillRect(cx + offset - 6, cy - 50, 12, 60);
+            });
+
+            // 3D Roof Triangular Prism
+            ctx.fillStyle = '#b45309'; // Roof Shadow side
+            ctx.beginPath();
+            ctx.moveTo(cx - 90, cy - 50);
+            ctx.lineTo(cx, cy - 95);
+            ctx.lineTo(cx + 90, cy - 50);
+            ctx.fill();
+
+            ctx.fillStyle = '#f59e0b'; // Roof Front
+            ctx.beginPath();
+            ctx.moveTo(cx - 85, cy - 50);
+            ctx.lineTo(cx, cy - 90);
+            ctx.lineTo(cx + 85, cy - 50);
+            ctx.fill();
+
+            // Town Hall Label Banner
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 12px Nunito';
+            ctx.textAlign = 'center';
+            ctx.fillText('CRITTER COVE IP HALL', cx, cy - 15);
+
+            // Scale Board Nodes dynamically to fit screen canvas
+            const scaleX = w / 820;
+            const scaleY = h / 560;
+
+            // Draw 3D Path Connecting Bridge Lines
+            ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            window.BOARD_NODES.forEach((node, idx) => {
+                const nx = node.x * scaleX;
+                const ny = node.y * scaleY + 6;
+                if (idx === 0) ctx.moveTo(nx, ny);
+                else ctx.lineTo(nx, ny);
+            });
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            window.BOARD_NODES.forEach((node, idx) => {
+                const nx = node.x * scaleX;
+                const ny = node.y * scaleY;
+                if (idx === 0) ctx.moveTo(nx, ny);
+                else ctx.lineTo(nx, ny);
+            });
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw 3D Extruded Node Blocks
+            window.BOARD_NODES.forEach((node, idx) => {
+                const nx = node.x * scaleX;
+                const ny = node.y * scaleY;
+
+                let mainColor = '#3b82f6'; // Blue
+                let sideColor = '#1d4ed8';
+                if (node.type === 'red') { mainColor = '#ef4444'; sideColor = '#b91c1c'; }
+                if (node.type === 'shop') { mainColor = '#f59e0b'; sideColor = '#b45309'; }
+                if (node.type === 'dmca') { mainColor = '#8b5cf6'; sideColor = '#6d28d9'; }
+                if (node.type === 'star') { mainColor = '#eab308'; sideColor = '#a16207'; }
+                if (node.type === 'quiz') { mainColor = '#10b981'; sideColor = '#047857'; }
+
+                // 3D Drop Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                ctx.beginPath();
+                ctx.arc(nx + 3, ny + 8, 22, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 3D Extrusion Cylinder Base
+                ctx.fillStyle = sideColor;
+                ctx.beginPath();
+                ctx.arc(nx, ny + 5, 21, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Top Face
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.arc(nx, ny, 21, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Inner Bevel Highlight
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(nx, ny - 2, 16, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Node Label Text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 9px Nunito';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.label, nx, ny + 3);
+            });
+
+            // Draw Player Pawns with 3D Elevation & Shadows
+            window.gameState.players.forEach((p, i) => {
+                const node = window.BOARD_NODES[p.nodeIndex];
+                const nx = node.x * scaleX + (i % 2 === 0 ? -12 : 12);
+                const ny = node.y * scaleY + (i < 2 ? -12 : 12);
+
+                // Pawn Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                ctx.beginPath();
+                ctx.ellipse(nx, ny + 12, 14, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Animal Head Token elevated slightly
+                window.drawAnimalFace(ctx, p.key, nx, ny - 4, 18);
+
+                // Active Turn Glowing Ring
+                if (i === window.gameState.turnIndex) {
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(nx, ny - 4, 22, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        };
+    </script>
+
+    <script>
+        window.rollDice = function() {
+            if (window.gameState.isRolling || window.gameState.isMoving) return;
+            window.gameState.isRolling = true;
+
+            const p = window.gameState.players[window.gameState.turnIndex];
+            const diceOverlay = document.getElementById('dice-overlay');
+            const cvs = document.getElementById('dice-jump-canvas');
+            const ctx = cvs.getContext('2d');
+            const resultText = document.getElementById('dice-result-text');
+
+            diceOverlay.classList.remove('hidden');
+            resultText.innerText = "JUMPING!";
+
+            let frame = 0;
+            let jumpHeight = 0;
+            let currentVal = 1;
+
+            const animInterval = setInterval(() => {
+                frame++;
+                jumpHeight = Math.sin(frame * 0.2) * 60;
+
+                if (frame >= 25) {
+                    clearInterval(animInterval);
+
+                    // Final Dice Value Calculation applying specific Animal Powers
+                    let finalRoll = Math.floor(Math.random() * 6) + 1;
+
+                    // Penguin Sprint Ability: Min roll is always 3
+                    if (p.key === 'penguin' && finalRoll < 3) {
+                        finalRoll = 3;
+                    }
+                    // Fawn Gentle Step Ability: Re-rolls any roll lower than 3 once
+                    if (p.key === 'fawn' && finalRoll < 3) {
+                        finalRoll = Math.floor(Math.random() * 6) + 1;
+                        if (finalRoll < 3) finalRoll = 3;
+                    }
+
+                    // Update currentVal so the visual dice block shows the exact roll number
+                    currentVal = finalRoll;
+
+                    // Redraw canvas with exact final roll on the dice face
+                    ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+                    // Draw Dice Block at top
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.roundRect(cvs.width / 2 - 35, 30, 70, 70, 16);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = 'bold 36px Fredoka One';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(currentVal, cvs.width / 2, 78);
+
+                    // Draw Full Body Animal underneath on ground
+                    window.drawAnimalFullBody(ctx, p.key, cvs.width / 2, 240, 70, 0);
+
+                    resultText.innerText = `ROLLED A ${finalRoll}!`;
+                    window.sfx.playDiceHit();
+
+                    setTimeout(() => {
+                        diceOverlay.classList.add('hidden');
+                        window.gameState.isRolling = false;
+                        window.movePlayerSteps(finalRoll);
+                    }, 1000);
+                    return;
+                }
+
+                currentVal = Math.floor(Math.random() * 6) + 1;
+
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+                // Draw Dice Block at top
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.roundRect(cvs.width / 2 - 35, 30, 70, 70, 16);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 36px Fredoka One';
+                ctx.textAlign = 'center';
+                ctx.fillText(currentVal, cvs.width / 2, 78);
+
+                // Draw Full Body Jumping Animal underneath
+                window.drawAnimalFullBody(ctx, p.key, cvs.width / 2, 240, 70, Math.max(0, jumpHeight));
+
+                if (frame % 3 === 0) window.sfx.playJump();
+            }, 50);
+        };
+
+        window.movePlayerSteps = function(steps) {
+            window.gameState.isMoving = true;
+            const p = window.gameState.players[window.gameState.turnIndex];
+
+            let stepsRemaining = steps;
+            const stepInterval = setInterval(() => {
+                p.nodeIndex = (p.nodeIndex + 1) % window.BOARD_NODES.length;
+                window.sfx.playJump();
+
+                // Hyena Ability: Laughing Claim - Steals 2 coins from any player passed
+                if (p.key === 'hyena') {
+                    window.gameState.players.forEach((otherP, idx) => {
+                        if (idx !== window.gameState.turnIndex && otherP.nodeIndex === p.nodeIndex && otherP.coins > 0) {
+                            const stolen = Math.min(2, otherP.coins);
+                            otherP.coins -= stolen;
+                            p.coins += stolen;
+                            window.sfx.playCoin();
+                        }
+                    });
+                }
+
+                window.renderBoard();
+
+                stepsRemaining--;
+                if (stepsRemaining <= 0) {
+                    clearInterval(stepInterval);
+                    window.gameState.isMoving = false;
+                    window.handleNodeLanding();
+                }
+            }, 300);
+        };
+
+        window.handleNodeLanding = function() {
+            const p = window.gameState.players[window.gameState.turnIndex];
+            const node = window.BOARD_NODES[p.nodeIndex];
+            window.gameState.pendingMinigame = true;
+
+            if (node.type === 'blue') {
+                let reward = 3;
+                if (p.key === 'seal') reward += 2; // Seal Ability: +2 Bonus on Blue
+                p.coins += reward;
+                window.sfx.playCoin();
+                window.showMsgModal('🔵 Blue Space Reward!', `You published an original work under copyright protection! Earned +${reward} Copyright Coins.\n\nGet ready for your turn's Educational Fair Use Challenge!`);
+
+            } else if (node.type === 'red') {
+                if (p.key === 'seal') { // Seal Ability: Immune to Red space losses
+                    window.showMsgModal('🦭 Seal Smooth Slide!', 'Your Seal ability shielded you from losing coins on Red Spaces!\n\nGet ready for your turn\'s Educational Fair Use Challenge!');
+                } else {
+                    p.coins = Math.max(0, p.coins - 2);
+                    window.sfx.playBad();
+                    window.showMsgModal('🔴 Red Space Penalty!', 'Uncleared background music detected! Lost 2 Copyright Coins.\n\nGet ready for your turn\'s Educational Fair Use Challenge!');
+                }
+
+            } else if (node.type === 'shop') {
+                if (p.isAI) {
+                    p.coins += 2;
+                    window.startMinigame();
+                } else {
+                    window.openShopModal();
+                }
+                return;
+
+            } else if (node.type === 'star') {
+                if (p.coins >= 20) {
+                    p.coins -= 20;
+                    p.stars += 1;
+                    window.sfx.playStar();
+                    window.showMsgModal('⭐ MASTERPIECE STAR OBTAINED!', 'You traded 20 Copyright Coins for a Masterpiece Star!\n\nGet ready for your turn\'s Educational Fair Use Challenge!');
+                } else {
+                    window.showMsgModal('⭐ Masterpiece Star Stage', 'You need 20 Copyright Coins to purchase a Masterpiece Star!\n\nGet ready for your turn\'s Educational Fair Use Challenge!');
+                }
+
+            } else if (node.type === 'quiz') {
+                let quizReward = 5;
+                if (p.key === 'owl') quizReward += 1; // Owl Ability: +1 bonus per quiz
+                if (p.key === 'monkey') quizReward += 3; // Monkey Ability: +3 bonus on quiz/event
+
+                p.coins += quizReward;
+                window.sfx.playCoin();
+                window.showMsgModal('📜 Legal Knowledge Boost!', `Completed a copyright assessment! Gained +${quizReward} Coins.\n\nGet ready for your turn's Educational Fair Use Challenge!`);
+
+            } else if (node.type === 'dmca') {
+                if (p.key === 'monkey') {
+                    p.coins += 3; // Monkey Ability: Bonus on event spaces
+                    window.showMsgModal('🐒 Monkey Playful Acrobat!', 'Your acrobatic maneuver turned a DMCA event into +3 Coins!\n\nGet ready for your turn\'s Educational Fair Use Challenge!');
+                } else {
+                    window.startMinigame();
+                    return;
+                }
+            }
+
+            window.updateHUD();
+        };
+
+        window.endTurn = function() {
+            window.gameState.turnIndex = (window.gameState.turnIndex + 1) % window.gameState.players.length;
+
+            if (window.gameState.turnIndex === 0) {
+                window.gameState.currentRound++;
+
+                // Owl Ability: Free item every 3 rounds
+                window.gameState.players.forEach(p => {
+                    if (p.key === 'owl' && window.gameState.currentRound % 3 === 0) {
+                        p.items.push('fair_use_brief');
+                    }
+                });
+
+                if (window.gameState.currentRound > window.gameState.totalRounds) {
+                    window.endGameVictory();
+                    return;
+                }
+            }
+
+            window.updateHUD();
+            window.updateTurnBanner();
+            window.renderBoard();
+        };
+
+        window.showMsgModal = function(title, text) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerText = text;
+            document.getElementById('msg-modal').classList.remove('hidden');
+        };
+
+        window.closeMsgModal = function() {
+            document.getElementById('msg-modal').classList.add('hidden');
+            if (window.gameState.pendingMinigame) {
+                window.gameState.pendingMinigame = false;
+                window.startMinigame();
+            } else {
+                window.endTurn();
+            }
+        };
+
+        window.openShopModal = function() {
+            const list = document.getElementById('shop-item-list');
+            list.innerHTML = '';
+
+            window.gameState.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass-panel p-3 rounded-2xl flex items-center justify-between border border-slate-700";
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="text-3xl">${item.icon}</div>
+                        <div>
+                            <div class="font-game text-amber-300 text-sm">${item.name}</div>
+                            <div class="text-[11px] text-slate-300">${item.desc}</div>
+                        </div>
+                    </div>
+                    <button onclick="window.buyItem('${item.id}')" class="custom-btn px-3 py-1.5 bg-amber-500 text-slate-950 font-game text-xs rounded-xl">
+                        ${item.cost} 🪙
+                    </button>
+                `;
+                list.appendChild(card);
+            });
+
+            document.getElementById('shop-modal').classList.remove('hidden');
+        };
+
+        window.buyItem = function(itemId) {
+            const p = window.gameState.players[window.gameState.turnIndex];
+            const item = window.gameState.items.find(i => i.id === itemId);
+            if (item && p.coins >= item.cost) {
+                p.coins -= item.cost;
+                p.items.push(itemId);
+                window.sfx.playCoin();
+                window.closeShopModal();
+                window.updateHUD();
+                window.showMsgModal('🏬 Item Purchased!', `Purchased ${item.name} for ${item.cost} coins!`);
+            } else {
+                window.sfx.playBad();
+            }
+        };
+
+        window.closeShopModal = function() {
+            document.getElementById('shop-modal').classList.add('hidden');
+            if (window.gameState.isMoving === false) {
+                if (window.gameState.pendingMinigame) {
+                    window.gameState.pendingMinigame = false;
+                    window.startMinigame();
+                } else {
+                    window.endTurn();
+                }
+            }
+        };
+    </script>
+
+    <script>
+        // Minigame Engine (Fair Use Catch - Arcade & Educational)
+        window.startMinigame = function() {
+            const modal = document.getElementById('minigame-modal');
+            const cvs = document.getElementById('mg-canvas');
+            const ctx = cvs.getContext('2d');
+            const timerEl = document.getElementById('mg-timer');
+            const controls = document.getElementById('mg-controls');
+            const tipEl = document.getElementById('mg-edu-tip');
+
+            modal.classList.remove('hidden');
+
+            cvs.width = cvs.parentElement.clientWidth;
+            cvs.height = cvs.parentElement.clientHeight;
+
+            let playerX = cvs.width / 2;
+            let humanScore = 0;
+            let timeLeft = 18;
+
+            const items = [];
+            // Expanded Educational Copyright Database
+            const educationalScenarios = [
+                { text: 'Parody Song', isLegal: true, category: 'Fair Use (Parody)', explanation: 'Parodies transform original works to critique them!', color: '#34d399' },
+                { text: 'Film Critique', isLegal: true, category: 'Fair Use (Critique)', explanation: 'Short clips used for critique or news reporting are Fair Use.', color: '#38bdf8' },
+                { text: 'Classroom Lesson', isLegal: true, category: 'Fair Use (Education)', explanation: 'Non-profit educational teaching is strongly protected under Factor 1.', color: '#facc15' },
+                { text: 'Public Domain Art', isLegal: true, category: 'Public Domain', explanation: 'Works with expired copyrights belong freely to the public domain!', color: '#a7f3d0' },
+                { text: 'CC-BY Photo', isLegal: true, category: 'Creative Commons', explanation: 'Creative Commons licenses permit reuse with proper attribution.', color: '#67e8f9' },
+                { text: 'Full Movie Upload', isLegal: false, category: 'Infringement (Market Harm)', explanation: 'Re-uploading full commercial films harms creator revenue!', color: '#ef4444' },
+                { text: 'Bootleg Audio Track', isLegal: false, category: 'Infringement (Unlicensed)', explanation: 'Distributing unlicensed audio without permission is illegal.', color: '#f43f5e' },
+                { text: 'Pirated Software', isLegal: false, category: 'Infringement (Piracy)', explanation: 'Unlicensed copies of software violate exclusive copyright rights.', color: '#e11d48' }
+            ];
+
+            controls.innerHTML = `
+                <button id="mg-left-btn" class="custom-btn px-8 py-3 bg-slate-800 border-2 border-slate-600 font-game text-xl rounded-2xl">◀ LEFT</button>
+                <button id="mg-right-btn" class="custom-btn px-8 py-3 bg-slate-800 border-2 border-slate-600 font-game text-xl rounded-2xl">RIGHT ▶</button>
+            `;
+
+            let moveLeft = false;
+            let moveRight = false;
+
+            document.getElementById('mg-left-btn').onmousedown = () => moveLeft = true;
+            document.getElementById('mg-left-btn').onmouseup = () => moveLeft = false;
+            document.getElementById('mg-right-btn').onmousedown = () => moveRight = true;
+            document.getElementById('mg-right-btn').onmouseup = () => moveRight = false;
+
+            window.onkeydown = (e) => {
+                if (e.key === 'ArrowLeft') moveLeft = true;
+                if (e.key === 'ArrowRight') moveRight = true;
+            };
+            window.onkeyup = (e) => {
+                if (e.key === 'ArrowLeft') moveLeft = false;
+                if (e.key === 'ArrowRight') moveRight = false;
+            };
+
+            const gameTimer = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(gameTimer);
+                    clearInterval(animLoop);
+
+                    // Compute AI Scores based on Difficulty
+                    const difficulty = window.gameState.difficulty;
+                    const minigameResults = window.gameState.players.map((p) => {
+                        let finalScore = 0;
+                        if (!p.isAI) {
+                            finalScore = humanScore;
+                        } else {
+                            if (difficulty === 'Easy') {
+                                finalScore = Math.floor(Math.random() * 30) + 40;
+                            } else if (difficulty === 'Medium') {
+                                finalScore = Math.floor(Math.random() * 30) + 70;
+                            } else {
+                                finalScore = Math.floor(Math.random() * 30) + 100;
+                            }
+                        }
+                        return { player: p, score: finalScore };
+                    });
+
+                    minigameResults.sort((a, b) => b.score - a.score);
+
+                    const payouts = [10, 5, 3, 0];
+                    let resultMsg = "🏆 TURN MINIGAME STANDINGS & PAYOUTS:\n\n";
+
+                    minigameResults.forEach((res, rank) => {
+                        const coinEarned = payouts[rank];
+                        res.player.coins += coinEarned;
+                        const rankSuffix = ['1st 🥇', '2nd 🥈', '3rd 🥉', '4th 🎗️'][rank];
+                        resultMsg += `${rankSuffix}: ${res.player.name} - ${res.score} pts (+${coinEarned} Coins)\n`;
+                    });
+
+                    resultMsg += "\n🎓 KEY IP LESSON: The 4 Factors of Fair Use are (1) Purpose & Character of use, (2) Nature of work, (3) Amount used, and (4) Effect on potential market value!";
+
+                    window.sfx.playSuccess();
+                    modal.classList.add('hidden');
+                    window.showMsgModal('🏆 EDUCATIONAL MINIGAME RESULTS', resultMsg);
+                }
+            }, 1000);
+
+            const animLoop = setInterval(() => {
+                if (moveLeft) playerX = Math.max(30, playerX - 10);
+                if (moveRight) playerX = Math.min(cvs.width - 30, playerX + 10);
+
+                // Spawn falling educational items
+                if (Math.random() < 0.1) {
+                    const scenario = educationalScenarios[Math.floor(Math.random() * educationalScenarios.length)];
+                    items.push({
+                        x: Math.random() * (cvs.width - 80) + 40,
+                        y: -20,
+                        data: scenario,
+                        speed: Math.random() * 3 + 3.5
+                    });
+                }
+
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+                // Background
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+                // Score Display
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = 'bold 20px Fredoka One';
+                ctx.fillText(`YOUR SCORE: ${humanScore}`, 20, 35);
+
+                // Draw Active Catch Player
+                const activeP = window.gameState.players[window.gameState.turnIndex];
+                window.drawAnimalFace(ctx, activeP.key, playerX, cvs.height - 40, 24);
+
+                // Catch Basket Net
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(playerX - 35, cvs.height - 25, 70, 15);
+
+                // Draw Falling Items
+                for (let i = items.length - 1; i >= 0; i--) {
+                    const item = items[i];
+                    item.y += item.speed;
+
+                    ctx.fillStyle = item.data.color;
+                    ctx.beginPath();
+                    ctx.roundRect(item.x - 55, item.y - 14, 110, 28, 8);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = 'bold 9px Nunito';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(item.data.text, item.x, item.y - 1);
+                    ctx.font = '700 8px Nunito';
+                    ctx.fillText(item.data.isLegal ? '✓ LEGAL REUSE' : '✕ INFRINGEMENT', item.x, item.y + 9);
+
+                    // Catch Collision Detection
+                    if (item.y >= cvs.height - 45 && Math.abs(item.x - playerX) < 50) {
+                        if (item.data.isLegal) {
+                            humanScore += 10;
+                            window.sfx.playCoin();
+                            if (tipEl) tipEl.innerHTML = `✅ <span class="text-emerald-400">FAIR USE:</span> ${item.data.explanation}`;
+                        } else {
+                            humanScore = Math.max(0, humanScore - 10);
+                            window.sfx.playBad();
+                            if (tipEl) tipEl.innerHTML = `🚨 <span class="text-rose-400">INFRINGEMENT TRAP:</span> ${item.data.explanation}`;
+                        }
+                        items.splice(i, 1);
+                    } else if (item.y > cvs.height + 20) {
+                        items.splice(i, 1);
+                    }
+                }
+            }, 30);
+        };
+
+        window.endGameVictory = function() {
+            const sorted = [...window.gameState.players].sort((a, b) => b.stars - a.stars || b.coins - a.coins);
+            const winner = sorted[0];
+
+            window.sfx.playStar();
+            window.showMsgModal('👑 CARNIVAL CHAMPION!', `Congratulations to ${winner.name} for winning Copyright Carnival with ${winner.stars} Stars and ${winner.coins} Coins!`);
+        };
+
+        // DOM Ready Load Handler
+        window.addEventListener('DOMContentLoaded', () => {
+            window.renderCharacterSelector();
+        });
+    </script>
+</body>
+</html>
