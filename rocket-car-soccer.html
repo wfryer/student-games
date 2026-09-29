@@ -1,0 +1,2820 @@
+<!doctype html>
+<html lang="en">
+ <head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260916-03-7343f9b","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YAHO2-t-jNE,0","Arial":"YAGyDvJ_4Ts,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Canva Sans":"YAFLd8sKbwc,2","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAHO2VMiyZo,0","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAEul-FRQw4,0","Georgia":"YAGzXkO0pEM,0","Helvetica Neue":"YAFcf6CtJfI,0","Impact":"YAFcfnjI7Vk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YAHO2a5g66Q,0","JetBrains Mono":"YAFdJksXcAk,0","Libre Baskerville":"YACgEUFdPdA,0","Manrope":"YAHO2b2feC4,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YADLjI9qxTA,0","Nunito":"YACgEX8C5Gg,0","Oleo Script":"YACgEQQ14jI,0","Phantom Sans":"YAHO2E8Pb88,0","Playfair Display":"YACgEYmuCJE,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YADWjpfPmdk,0","Raleway":"YACgEVg3xZg,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Spectral":"YAHO2rVUHIM,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Ubuntu":"YACgERDU--Q,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YADlN8CFZ8Q,0","ui-sans-serif":"YACkoN-xg4g,0"}}');</script><script src="/_sdk/c21197326e9a1154.telemetry_sdk.js" integrity="sha512-Aqwl+NmLtKBcMQM4HY+W9lmBHa+zP5MqSEuYfCjkzt4xeOSv2xNz81cCp7JyXBVrY+zojg5o94FHY/R31v2d3Q=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rocket Car Soccer</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #eaf7ff;
+      --field: #082c45;
+      --cyan: #32d7ff;
+      --orange: #ff8a35;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      width: 100%;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    .stadium-shell {
+      width: 100%;
+      min-height: calc(100 * min(var(--vh, 1vh), 1vh));
+      background-image:
+        linear-gradient(rgba(91, 211, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(91, 211, 255, 0.045) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    .game-card {
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255,255,255,0.1);
+    }
+
+    .arena-frame {
+      background: linear-gradient(145deg, #113e5a, #061c30);
+      border: 1px solid rgba(126, 221, 255, 0.35);
+      box-shadow: 0 0 0 5px rgba(35, 117, 155, 0.16), 0 20px 50px rgba(0, 0, 0, 0.32);
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: calc(66 * min(var(--vh, 1vh), 1vh));
+      border-radius: 14px;
+      touch-action: none;
+    }
+
+    .score-number {
+      min-width: 2.4rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .control-button {
+      touch-action: manipulation;
+      user-select: none;
+      transition: transform .15s ease, filter .15s ease, background .15s ease;
+    }
+
+    .control-button:hover { filter: brightness(1.15); }
+    .control-button:active,
+    .control-button.is-held { transform: scale(.94); filter: brightness(.85); }
+
+    .control-button:focus-visible,
+    button:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
+    }
+
+    .pulse-dot { animation: pulse 1.7s ease-in-out infinite; }
+
+    @keyframes pulse {
+      50% {
+        opacity: .35;
+        transform: scale(.72);
+      }
+    }
+
+    .entry { animation: arrive .55s ease both; }
+
+    @keyframes arrive {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mode-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.25rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: rgba(2, 15, 27, .82);
+      backdrop-filter: blur(12px);
+    }
+
+    .mode-menu.is-hidden { display: none; }
+
+    .account-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(2, 15, 27, .9);
+      backdrop-filter: blur(14px);
+    }
+    .account-gate.is-hidden { display: none; }
+    .account-card {
+      width: min(100%, 30rem);
+      background: linear-gradient(145deg,#113e5a,#061c30);
+      border: 1px solid rgba(126,221,255,.4);
+      box-shadow: 0 28px 80px rgba(0,0,0,.6);
+    }
+    .account-input {
+      width: 100%;
+      border-radius: .8rem;
+      border: 1px solid rgba(126,221,255,.22);
+      background: rgba(0,0,0,.22);
+      color: white;
+      padding: .75rem .9rem;
+      outline: none;
+    }
+    .account-input:focus { border-color: rgba(126,221,255,.7); box-shadow: 0 0 0 3px rgba(126,221,255,.1); }
+    .account-status { min-height: 1.25rem; }
+
+    .mode-card {
+      width: min(100%, 30rem);
+      background: linear-gradient(145deg, #113e5a, #061c30);
+      border: 1px solid rgba(126,221,255,.35);
+      box-shadow: 0 28px 80px rgba(0,0,0,.5);
+      max-height: calc(100vh - 2.5rem);
+      overflow-y: auto;
+    }
+
+    .mode-choice {
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    .mode-choice:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.12);
+    }
+
+    .mode-choice:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 3px;
+    }
+
+    #rankSelect {
+      appearance: auto;
+      cursor: pointer;
+    }
+
+    .skin-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 25;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.25rem;
+      overflow-y: auto;
+      background: rgba(2, 15, 27, .9);
+      backdrop-filter: blur(14px);
+    }
+
+    .skin-panel.is-hidden { display: none; }
+
+    .skin-card {
+      width: min(100%, 34rem);
+      max-height: calc(100vh - 2.5rem);
+      overflow-y: auto;
+      background: linear-gradient(145deg, #113e5a, #061c30);
+      border: 1px solid rgba(126,221,255,.4);
+      box-shadow: 0 28px 80px rgba(0,0,0,.55);
+    }
+
+    .skin-choice {
+      min-height: 92px;
+      border: 2px solid rgba(255,255,255,.1);
+      transition: transform .15s ease, filter .15s ease, border-color .15s ease;
+    }
+
+    .skin-choice:hover:not(:disabled) {
+      transform: translateY(-2px);
+      filter: brightness(1.12);
+    }
+
+    .skin-choice.selected {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.15), 0 0 24px rgba(126,221,255,.2);
+    }
+
+    .skin-choice:disabled {
+      cursor: not-allowed;
+      opacity: .52;
+      filter: grayscale(.45);
+    }
+
+    .skin-swatch {
+      width: 64px;
+      height: 36px;
+      border-radius: 10px;
+      border: 3px solid rgba(255,255,255,.75);
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,.2);
+    }
+
+
+    .quest-panel { position: fixed; inset: 0; z-index: 26; display:flex; align-items:flex-start; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,15,27,.92); backdrop-filter:blur(14px); }
+    .quest-panel.is-hidden { display:none; }
+    .quest-card { width:min(100%, 40rem); max-height:calc(100vh - 2.5rem); overflow-y:auto; background:linear-gradient(145deg,#113e5a,#061c30); border:1px solid rgba(126,221,255,.4); box-shadow:0 28px 80px rgba(0,0,0,.55); }
+    .quest-item { border:2px solid rgba(255,255,255,.1); transition:transform .15s ease, filter .15s ease; }
+    .quest-item.complete { border-color:rgba(52,211,153,.65); background:rgba(16,185,129,.10); }
+
+    .emote-bar { display:none !important; }
+    .emote-bar.is-open { display:flex; }
+    .emote-button { min-width:82px; border:1px solid rgba(126,221,255,.2); background:linear-gradient(145deg,#123f5b,#09263b); border-radius:14px; padding:.45rem .55rem; color:white; font-weight:800; font-size:.72rem; transition:transform .12s ease, filter .12s ease, border-color .12s ease; }
+    .emote-button:hover { transform:translateY(-2px); filter:brightness(1.15); border-color:rgba(126,221,255,.5); }
+    .emote-button:active { transform:scale(.96); }
+    .emote-preview { width:64px; height:38px; margin:0 auto .2rem; border-radius:10px; background:rgba(0,0,0,.18); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+
+    .quest-reward { width:52px; height:30px; border-radius:8px; border:2px solid rgba(255,255,255,.8); box-shadow:inset 0 0 0 2px rgba(0,0,0,.2); }
+
+    .copyright-quiz {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(2, 15, 27, .86);
+      backdrop-filter: blur(12px);
+    }
+
+    .copyright-quiz.is-hidden { display: none; }
+
+    .copyright-quiz-card {
+      width: min(100%, 38rem);
+      background: linear-gradient(145deg, #113e5a, #061c30);
+      border: 1px solid rgba(126,221,255,.4);
+      box-shadow: 0 28px 80px rgba(0,0,0,.55);
+    }
+  </style>
+  <script src="/_sdk/efe904fe8a212716.data_sdk.js" type="text/javascript" integrity="sha512-oiO0pmn5llS1uDeB2l690YywxqOe/a0U1kzY6RGaLZXtyh9YjTk1CUoK/bJUugc1QbUaJMJ3IE1MtpNY5NBZCw=="></script>
+  <script src="/_sdk/fab616ff82261ec3.resizing_sdk.js" type="text/javascript" integrity="sha512-6HMQCcUK6kDKuW59G/ZuFQDLjI3pOzz+2hgX6MaEV1izmYwYrrxv76nfirS4geYvvwnfUYWKbXBg/ycD2lR6jw=="></script>
+ </head>
+ <body data-template-id="__page-root">
+  <div id="accountGate" class="account-gate" role="dialog" aria-modal="true" aria-labelledby="account-title">
+    <section class="account-card rounded-3xl p-6 sm:p-8">
+      <div class="mb-6 text-center">
+        <div class="mb-3 text-4xl" aria-hidden="true">🔐⚽</div>
+        <h2 id="account-title" class="text-2xl font-extrabold text-white">Rocket Car Soccer Account</h2>
+        <p class="mt-2 text-sm text-blue-100/70">Create an account or log in if you want your ranks, quests, and skins to save. You can also play as a guest.</p>
+      </div>
+      <div class="grid gap-3">
+        <label class="text-xs font-bold uppercase tracking-wider text-blue-100/80">Username</label>
+        <input id="accountUsername" class="account-input" maxlength="20" autocomplete="username" placeholder="Unique username">
+        <label class="mt-1 text-xs font-bold uppercase tracking-wider text-blue-100/80">Password</label>
+        <input id="accountPassword" class="account-input" type="password" maxlength="64" autocomplete="current-password" placeholder="Password">
+        <div class="grid grid-cols-2 gap-3 mt-2">
+          <button type="button" id="loginAccountButton" class="rounded-xl bg-cyan-600 px-4 py-3 text-sm font-extrabold text-white hover:brightness-110">Log In</button>
+          <button type="button" id="createAccountButton" class="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white hover:brightness-110">Create Account</button>
+        </div>
+        <button type="button" id="continueGuestButton" class="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-extrabold text-white hover:brightness-125">Continue as Guest</button>
+        <p id="accountStatus" class="account-status text-center text-xs font-bold text-blue-100/80"></p>
+        <p class="text-center text-[11px] leading-relaxed text-blue-100/50">This account system is local to this browser. Your password is not sent to a server.</p>
+      </div>
+    </section>
+  </div>
+  <div id="modeMenu" class="mode-menu" role="dialog" aria-modal="true" aria-labelledby="mode-title">
+    <section class="mode-card rounded-3xl p-6 sm:p-8">
+      <div class="mb-6 text-center">
+        <div class="mb-3 text-4xl" aria-hidden="true">⚽🚀</div>
+        <h2 id="mode-title" class="font-extrabold tracking-tight">Rocket Car Soccer</h2>
+        <p class="mt-2 text-sm text-blue-100/80">Choose how you want to play.</p>
+        <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-left">
+          <span id="loggedInAs" class="text-xs font-bold text-emerald-200">Playing as Guest</span>
+          <div class="flex gap-2">
+            <button type="button" id="accountButton" class="rounded-lg border border-cyan-200/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-bold text-cyan-100 hover:brightness-125">Account</button>
+            <button type="button" id="logoutAccountButton" class="hidden rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-white hover:brightness-125">Log Out</button>
+          </div>
+        </div>
+        <button type="button" id="openSkinsButton" class="mode-choice mx-auto rounded-2xl border border-purple-200/25 bg-purple-400/10 px-6 py-3 text-sm font-extrabold text-purple-100">🎨 Skins</button>
+        <button type="button" id="openQuestsButton" class="mode-choice mx-auto rounded-2xl border border-emerald-200/25 bg-emerald-400/10 px-6 py-3 text-sm font-extrabold text-emerald-100">🎯 Quests</button>
+      </div>
+
+      <div class="grid gap-4">
+        <section class="rounded-2xl border border-cyan-200/20 bg-cyan-300/5 p-4">
+          <div class="mb-3">
+            <h3 class="text-xl font-extrabold text-cyan-200">CASUAL</h3>
+            <p class="mt-1 text-xs text-blue-100/70">Play without a rank.</p>
+          </div>
+          <div class="grid gap-3">
+            <button type="button" id="botMatchButton" class="mode-choice rounded-2xl border border-cyan-200/15 bg-[#123f5b] px-5 py-4 text-left">
+              <span class="block font-extrabold text-white">1v1 vs Bot</span>
+              <span class="mt-1 block text-xs text-blue-100/70">Play against the computer.</span>
+            </button>
+            <button type="button" id="localMatchButton" class="mode-choice rounded-2xl border border-orange-200/15 bg-[#123f5b] px-5 py-4 text-left">
+              <span class="block font-extrabold text-white">Local Multiplayer</span>
+              <span class="mt-1 block text-xs text-blue-100/70">Play 1v1 on the same device.</span>
+            </button>
+            <button type="button" id="twoVTwoCasualButton" class="mode-choice rounded-2xl border border-cyan-200/15 bg-[#123f5b] px-5 py-4 text-left">
+              <span class="block font-extrabold text-white">2v2 Local Team</span>
+              <span class="mt-1 block text-xs text-blue-100/70">You + a teammate vs two bots.</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="rounded-2xl border border-orange-200/20 bg-orange-300/5 p-4">
+          <div class="mb-3">
+            <h3 class="text-xl font-extrabold text-orange-300">RANKED</h3>
+            <p class="mt-1 text-xs text-blue-100/70">The bot matches your selected rank.</p>
+          </div>
+
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-blue-100/80">Your Rank</span>
+            <span id="rankBadge" class="rounded-xl bg-orange-300/15 px-3 py-2 text-sm font-extrabold text-orange-200 text-right leading-5">1v1: Bronze<br>2v2: Bronze</span>
+          </div>
+
+          <div id="rankDescription" class="mb-3 rounded-xl bg-black/15 p-3 text-sm text-blue-100/80">
+            Win a ranked match to move up. Lose to move down.
+          </div>
+
+          <button type="button" id="rankedMatchButton" class="mode-choice w-full rounded-2xl border border-orange-200/20 bg-[#7b3f1e] px-5 py-4 text-left">
+            <span id="rankedButtonTitle" class="block font-extrabold text-white">Play Ranked: Bronze</span>
+            <span id="rankedButtonCopy" class="mt-1 block text-xs text-orange-100/80">Play against a Bronze-skill bot.</span>
+          </button>
+          <button type="button" id="ranked2v2MatchButton" class="mode-choice mt-3 w-full min-h-[64px] rounded-2xl border border-orange-200/20 bg-[#63341d] px-5 py-4 text-left">
+            <span id="ranked2v2ButtonTitle" class="block font-extrabold text-white">Play Ranked 2v2: Bronze</span>
+            <span id="ranked2v2ButtonCopy" class="mt-1 block text-xs text-orange-100/80">You + a teammate vs two Bronze-skill bots.</span>
+          </button>
+        </section>
+      </div>
+    </section>
+
+    <div id="skinPanel" class="skin-panel is-hidden" role="dialog" aria-modal="true" aria-labelledby="skin-title">
+      <section class="skin-card rounded-3xl p-6 sm:p-8">
+        <div class="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 id="skin-title" class="text-2xl font-extrabold">Car Skins</h2>
+            <p class="mt-1 text-xs text-blue-100/70">Customize your car. Rank unlocks are permanent.</p>
+          </div>
+          <button type="button" id="closeSkinsButton" class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-white hover:brightness-125">Back</button>
+        </div>
+        <div id="skinUnlockStatus" class="mb-4 rounded-xl border border-cyan-200/15 bg-cyan-300/5 px-4 py-3 text-xs text-blue-100/80"></div>
+        <div id="skinGrid" class="grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
+      </section>
+    </div>
+  </div>
+  <div id="questPanel" class="quest-panel is-hidden" role="dialog" aria-modal="true" aria-labelledby="quest-title">
+    <section class="quest-card rounded-3xl p-6 sm:p-8">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h2 id="quest-title" class="text-2xl font-extrabold">Quests</h2>
+          <p class="mt-1 text-xs text-blue-100/70">Complete challenges to earn exclusive car skins.</p>
+        </div>
+        <button type="button" id="closeQuestsButton" class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-white hover:brightness-125">Back</button>
+      </div>
+      <div id="questStats" class="mb-4 rounded-xl border border-emerald-200/15 bg-emerald-300/5 px-4 py-3 text-xs text-blue-100/80"></div>
+      <div id="questGrid" class="grid gap-3"></div>
+    </section>
+  </div>
+  <div id="copyrightQuiz" class="copyright-quiz is-hidden" role="dialog" aria-modal="true" aria-labelledby="copyright-quiz-title">
+   <section class="copyright-quiz-card rounded-3xl p-6 sm:p-8">
+    <div class="mb-5 flex items-start justify-between gap-4">
+     <div>
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-orange-300">Copyright timeout</p>
+      <h2 id="copyright-quiz-title" class="mt-2 text-2xl font-extrabold text-white">Fair Use &amp; Copyright</h2>
+     </div><span id="quizProgress" class="rounded-full bg-cyan-300/15 px-3 py-1 text-xs font-bold text-cyan-100"></span>
+    </div>
+    <p id="quizQuestion" class="text-lg font-bold leading-relaxed text-white"></p>
+    <div id="quizOptions" class="mt-4 grid gap-3"></div>
+    <div id="quizAnswer" class="mt-4 hidden rounded-2xl border border-cyan-200/20 bg-cyan-300/10 p-4 text-sm leading-relaxed text-cyan-50"></div>
+    <div class="mt-6 flex flex-wrap justify-end gap-3"><button type="button" id="continueMatchButton" class="hidden rounded-xl bg-[#ff8a35] px-4 py-3 text-sm font-extrabold text-white">Continue match</button>
+    </div>
+   </section>
+  </div>
+  <div class="stadium-shell">
+   <header class="w-full px-4 pt-5 sm:px-7 sm:pt-7">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+     <div class="entry">
+      <div class="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">
+       <span class="pulse-dot h-2 w-2 rounded-full bg-cyan-300"></span> <span data-template-id="live-label" class="canva-text"></span>
+      </div>
+      <h1 data-template-id="game-title" class="canva-text font-extrabold tracking-tight"></h1>
+      <p data-template-id="game-subtitle" class="canva-text mt-1 max-w-xl"></p>
+     </div>
+     <section class="entry flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#051724]/80 px-4 py-3 backdrop-blur" style="animation-delay:.12s" aria-label="Match scoreboard">
+      <div class="text-center">
+       <span data-template-id="blue-team-label" class="canva-text block text-[10px] font-bold uppercase tracking-widest"></span> <span id="blueScore" class="score-number text-3xl font-extrabold text-cyan-300">0</span>
+      </div><span class="text-lg font-bold text-white/30" aria-hidden="true">:</span>
+      <div class="text-center">
+       <span data-template-id="orange-team-label" class="canva-text block text-[10px] font-bold uppercase tracking-widest"></span> <span id="orangeScore" class="score-number text-3xl font-extrabold text-orange-300">0</span>
+      </div>
+      <div class="ml-2 border-l border-white/10 pl-4 text-center">
+       <span data-template-id="timer-label" class="canva-text block text-[10px] font-bold uppercase tracking-widest"></span> <span id="timer" class="text-2xl font-extrabold tracking-tight text-white">1:30</span>
+      </div>
+     </section>
+    </div>
+   </header>
+   <main class="w-full px-4 pb-7 pt-5 sm:px-7">
+    <section class="mx-auto w-full max-w-6xl">
+     <div class="game-card arena-frame entry overflow-hidden rounded-2xl p-2 sm:p-3" style="animation-delay:.2s">
+      <canvas id="gameCanvas" aria-label="Rocket car soccer arena. Blue uses WASD to drive, Space to boost, and Shift to drift."></canvas>
+     </div>
+     <div class="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]">
+      <aside data-template-id="instruction-panel" class="canva-panel entry rounded-2xl border border-cyan-200/15 p-4 backdrop-blur" style="animation-delay:.28s">
+       <div class="flex gap-3">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200" aria-hidden="true">
+         <i data-lucide="gamepad-2" width="19" height="19"></i>
+        </div>
+        <div>
+         <h2 data-template-id="controls-title" class="canva-text font-bold uppercase tracking-wider"></h2>
+         <p data-template-id="controls-copy" class="canva-text mt-1 leading-relaxed"></p>
+        </div>
+       </div>
+      </aside>
+      <section aria-label="Touch game controls" class="entry flex flex-wrap items-center justify-center gap-2" style="animation-delay:.34s">
+       <button type="button" data-control="left" aria-label="Turn left" class="control-button flex h-11 w-12 items-center justify-center rounded-xl border border-white/10 bg-[#123f5b] text-white"> <i data-lucide="chevron-left" width="22" height="22"></i> </button> <button type="button" data-control="up" aria-label="Drive forward" class="control-button flex h-11 w-12 items-center justify-center rounded-xl border border-cyan-100/20 bg-[#17618a] text-white"> <i data-lucide="chevron-up" width="22" height="22"></i> </button> <button type="button" data-control="right" aria-label="Turn right" class="control-button flex h-11 w-12 items-center justify-center rounded-xl border border-white/10 bg-[#123f5b] text-white"> <i data-lucide="chevron-right" width="22" height="22"></i> </button> <button type="button" id="boostButton" data-template-id="boost-button" class="canva-button control-button ml-1 flex h-11 items-center rounded-xl px-4 text-sm font-extrabold uppercase tracking-wide"> <i data-lucide="zap" class="mr-1" width="16" height="16"></i> <span data-template-id="boost-label" class="canva-text"></span> </button> <button type="button" id="driftButton" data-template-id="drift-button" class="canva-button control-button flex h-11 items-center rounded-xl px-4 text-sm font-extrabold uppercase tracking-wide"> <i data-lucide="wind" class="mr-1" width="16" height="16"></i> <span data-template-id="drift-label" class="canva-text"></span> </button> <button type="button" id="restartButton" data-template-id="restart-button" class="canva-button control-button flex h-11 items-center rounded-xl px-4 text-sm font-bold"> <i data-lucide="rotate-ccw" class="mr-1" width="16" height="16"></i> <span data-template-id="restart-label" class="canva-text"></span> </button> <button type="button" id="leaveMatchButton" class="canva-button control-button flex h-11 items-center rounded-xl px-4 text-sm font-bold"> <i data-lucide="log-out" class="mr-1" width="16" height="16"></i> <span>Leave Match</span> </button>
+      </section>
+     </div>
+
+     <section aria-label="Player emotes" class="entry rounded-2xl border border-purple-200/15 bg-purple-300/5 p-3" style="animation-delay:.36s">
+      <div class="mb-2 text-center text-[10px] font-extrabold uppercase tracking-[0.2em] text-purple-200">Emotes — Press T</div>
+      <div class="emote-bar">
+       <button type="button" class="emote-button" data-emote="thumbs"><div class="emote-preview">👍</div><span>1 · Thumbs Up</span></button>
+       <button type="button" class="emote-button" data-emote="cry"><div class="emote-preview">😭</div><span>2 · Crying</span></button>
+       <button type="button" class="emote-button" data-emote="laugh"><div class="emote-preview">😂</div><span>3 · Laughing</span></button>
+       <button type="button" class="emote-button" data-emote="skeleton"><div class="emote-preview">💀</div><span>4 · Skeleton</span></button>
+      </div>
+     </section>
+     <p id="statusMessage" class="mt-4 text-center text-sm font-semibold text-cyan-100" aria-live="polite">Choose a match type to kick off.</p>
+    </section>
+   </main>
+   <footer class="w-full px-4 pb-5 text-center text-xs text-blue-200/55 sm:px-7">
+    <span data-template-id="footer-note" class="canva-text"></span>
+   </footer>
+  </div>
+  <script src="/_sdk/d80b7fc77c36e544.editing_sdk.js" integrity="sha512-G1c7mLHfqSpyYPFnCMpb8X52/iP9EEJ4y/O8pmYPhWe33R+uuxRRWVYdXU2F+N4m0Y2/2lhbJGfxoPXkVhIZzw=="></script>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const blueScoreEl = document.getElementById("blueScore");
+    const orangeScoreEl = document.getElementById("orangeScore");
+    const timerEl = document.getElementById("timer");
+    const statusEl = document.getElementById("statusMessage");
+
+    const WORLD = { w: 960, h: 540, goalH: 190 };
+    const keys = {};
+    const particles = [];
+    let goalAnimation = { active: false, team: null, started: 0, duration: 1.15, returnToMenuAfter: false };
+    let saveAnimation = { active: false, epic: false, started: 0, duration: 0.62, x: 0, y: 0 };
+    let activeEmote = { type: null, started: 0, duration: 1.65 };
+    let teammateEmote = { type: null, started: 0, duration: 1.65 };
+    let emoteBarOpen = false;
+    let teammateEmoteBarOpen = false;
+    const emoteBar = document.querySelector(".emote-bar");
+    const emoteTypes = ["thumbs", "cry", "laugh", "skeleton"];
+
+    function toggleEmoteBar(force) {
+      emoteBarOpen = typeof force === "boolean" ? force : !emoteBarOpen;
+      emoteBar.classList.toggle("is-open", emoteBarOpen);
+    }
+
+    function toggleTeammateEmoteBar(force) {
+      if (!(gameMode === "local" || gameMode === "2v2" || gameMode === "ranked2v2")) return;
+      teammateEmoteBarOpen = typeof force === "boolean" ? force : !teammateEmoteBarOpen;
+    }
+    const REPLAY_SECONDS = 5;
+    const replayBuffer = [];
+    let replayActive = false;
+    let replayFrames = [];
+    let replayStarted = 0;
+    let replayDuration = 0;
+    let replayTimer = null;
+    const pads = [
+      { x: 325, y: 120, type: "quarter", active: true, cooldown: 0 },
+      { x: 635, y: 420, type: "full", active: true, cooldown: 0 },
+      { x: 480, y: 90, type: "quarter", active: true, cooldown: 0 },
+      { x: 480, y: 450, type: "full", active: true, cooldown: 0 }
+    ];
+
+    const player = { x: 205, y: 205, vx: 0, vy: 0, angle: 0, r: 25, color: "#32d7ff", team: "blue", boost: 100, boosting: false };
+    const teammate = { x: 205, y: 335, vx: 0, vy: 0, angle: 0, r: 25, color: "#66e6ff", team: "blue", boost: 100, boosting: false };
+    const bot = { x: 755, y: 205, vx: 0, vy: 0, angle: Math.PI, r: 25, color: "#ff8a35", team: "orange", boost: 100, boosting: false };
+    const bot2 = { x: 755, y: 335, vx: 0, vy: 0, angle: Math.PI, r: 25, color: "#ffb06b", team: "orange", boost: 100, boosting: false };
+    const ball = { x: 480, y: 270, vx: 0, vy: 0, r: 19 };
+
+    let blueScore = 0;
+    let orangeScore = 0;
+    let remaining = 90;
+    let overtime = false;
+    let lastTime = performance.now();
+    let gameMode = "bot";
+    let rankedRank = "bronze";
+    let ranked2v2Rank = "bronze";
+    const RANK_SAVE_KEY = "rocketCarSoccerRank";
+    const RANK_2V2_SAVE_KEY = "rocketCarSoccerRank2v2";
+    const ACCOUNT_STORE_KEY = "rocketCarSoccerAccounts_v1";
+    const ACCOUNT_SESSION_KEY = "rocketCarSoccerAccountSession_v1";
+    let currentAccountUsername = null;
+    let accountSessionActive = false;
+    // One-time account reset requested by the player: start with only the four free skins.
+    const ACCOUNT_RESET_KEY = "rocketCarSoccerAccountReset_v1";
+    try {
+      if (localStorage.getItem(ACCOUNT_RESET_KEY) !== "done") {
+        localStorage.removeItem(RANK_SAVE_KEY);
+        localStorage.removeItem(RANK_2V2_SAVE_KEY);
+        localStorage.removeItem("rocketCarSoccerQuestProgress");
+        localStorage.removeItem("rocketCarSoccerSkinUnlocks");
+        localStorage.removeItem("rocketCarSoccerSelectedSkin");
+        localStorage.setItem(ACCOUNT_RESET_KEY, "done");
+      }
+    } catch (e) {}
+    let rankedBotSkill = 1;
+    let matchStarted = false;
+    let gameOver = false;
+    let driftActive = false;
+    let teammateDriftActive = false;
+    let orangeDriftActive = false;
+    let botDriftActive = false;
+    let botDriftMemory = 0;
+    let bot2DriftActive = false;
+    let bot2DriftMemory = 0;
+    let announcementUntil = 0;
+    let quizOpen = false;
+    let quizIndex = 0;
+    let quizSource = "goal";
+    let quizPadReward = 0;
+    let playerSlowUntil = 0;
+    let copyrightClock = 0;
+    let nextTimedCopyrightQuestion = 15;
+
+    const copyrightQuestions = [
+      ["What does copyright protect?", ["Only facts", "Original creative works", "Public places"], 1],
+      ["What is fair use?", ["Unlimited copying", "Limited use in certain situations", "A type of copyright registration"], 1],
+      ["Can copyrighted material on YouTube cause problems?", ["No, never", "Yes, it can cause claims or removal", "Only if it is music"], 1],
+      ["Does finding something online mean you can freely use it?", ["Yes", "Only on weekends", "No, it may still be protected"], 2],
+      ["What was the Happy Birthday copyright controversy about?", ["A disputed copyright claim over the song", "A new music award", "A YouTube channel"], 0],
+      ["When was the Happy Birthday song recognized as public domain?", ["2001", "2016", "2024"], 1],
+      ["Why learn copyright before making a video?", ["To avoid improper use and claims", "To make videos longer", "To increase internet speed"], 0],
+      ["What is a safe way to use someone else’s creative work?", ["Get permission", "Remove the creator’s name", "Assume it is free"], 0],
+      ["What is the main idea behind fair use?", ["It balances rights with certain public uses", "It removes all creator rights", "It applies only to sports"], 0],
+      ["What should you remember when using someone else’s work?", ["Respect the creator’s rights", "Never check the rules", "Always claim it as your own"], 0],
+      ["What is public domain?", ["Works that are not protected by copyright", "A private website", "A type of video game"], 0],
+      ["Does giving credit automatically make copying legal?", ["Yes, always", "No, credit alone does not automatically give permission", "Only for music"], 1],
+      ["What does a Creative Commons license do?", ["It can give the public specific permissions to use a work", "It makes every work free of all rules", "It removes the creator's name"], 0],
+      ["What does CC BY generally require?", ["Attribution to the creator", "Deleting the original", "Paying every viewer"], 0],
+      ["What should you check before using a Creative Commons work?", ["The specific license terms", "Only the file size", "The number of comments"], 0],
+      ["What is plagiarism?", ["Presenting someone else's work or ideas as your own", "Making your own drawing", "Buying a legal license"], 0],
+      ["Can a copyright owner give someone permission to use a work?", ["Yes", "No, never", "Only if the work is a fact"], 0],
+      ["Which can be protected by copyright?", ["An original drawing", "A basic mathematical fact", "A common word by itself"], 0],
+      ["Why is the license important when downloading an image?", ["It tells you what uses may be allowed", "It makes the image higher quality", "It changes the image's resolution"], 0],
+      ["If a work is labeled 'all rights reserved,' what should you generally do before reusing it?", ["Check for permission or another legal basis", "Assume anyone can copy it", "Remove the label"], 0],
+      ["Can copyright apply to original video game art?", ["Yes", "No, games cannot be copyrighted", "Only if the game is sold"], 0],
+      ["What is attribution?", ["Giving credit to the creator as required by a license", "Changing the creator's work", "Deleting a creator's name"], 0],
+      ["What should you do if a license has conditions for commercial use?", ["Follow those conditions before using the work commercially", "Ignore them", "Change the file name"], 0],
+      ["Does owning a physical copy of a book usually mean you own its copyright?", ["No", "Yes, automatically", "Only if the book is old"], 0],
+      ["What is one reason copyright exists?", ["To give creators legal rights over their original works", "To make every website private", "To stop people from learning"], 0],
+      ["Can copyright rules differ from trademark rules?", ["Yes, they protect different kinds of rights", "No, they are exactly the same", "Only on weekends"], 0],
+      ["If you want to use a copyrighted song in a project, what is one possible safe step?", ["Get the necessary permission or license", "Hide the song's title", "Speed the song up"], 0],
+      ["Why shouldn't you assume an image is free just because there is no copyright symbol?", ["Copyright protection does not require a visible symbol", "Every image without a symbol is public domain", "Symbols determine image quality"], 0],
+      ["What should you do when a website gives specific reuse instructions?", ["Read and follow the stated terms", "Ignore them", "Assume they are optional"], 0],
+      ["Who can normally hold copyright in an original work?", ["The creator or another rights holder", "Every person who views it", "The first person who downloads it"], 0]
+    ];
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * devicePixelRatio));
+      canvas.height = Math.max(1, Math.round(rect.height * devicePixelRatio));
+      ctx.setTransform(canvas.width / WORLD.w, 0, 0, canvas.height / WORLD.h, 0, 0);
+    }
+
+    function updateHud() {
+      blueScoreEl.textContent = blueScore;
+      orangeScoreEl.textContent = orangeScore;
+      const mins = Math.floor(remaining / 60);
+      const secs = String(Math.ceil(remaining % 60)).padStart(2, "0");
+      timerEl.textContent = overtime ? "OT" : mins + ":" + secs;
+    }
+
+    function announce(message) {
+      statusEl.textContent = message;
+      announcementUntil = performance.now() + 1800;
+    }
+
+    function resetPositions(scoredBy) {
+      player.x = 205;
+      player.y = gameMode.includes("2v2") ? 205 : 270;
+      player.vx = 0;
+      player.vy = 0;
+      player.angle = 0;
+      player.boost = 100;
+      teammate.x = 205;
+      teammate.y = 335;
+      teammate.vx = 0;
+      teammate.vy = 0;
+      teammate.angle = 0;
+      teammate.boost = 100;
+      teammateDriftActive = false;
+
+      bot.x = 755;
+      bot.y = gameMode.includes("2v2") ? 205 : 270;
+      bot.vx = 0;
+      bot.vy = 0;
+      bot.angle = Math.PI;
+      bot.boost = 100;
+      botDriftActive = false;
+      botDriftMemory = 0;
+
+      bot2.x = 755;
+      bot2.y = 335;
+      bot2.vx = 0;
+      bot2.vy = 0;
+      bot2.angle = Math.PI;
+      bot2.boost = 100;
+      bot2DriftActive = false;
+      bot2DriftMemory = 0;
+
+      ball.x = 480;
+      ball.y = 270;
+      ball.vx = scoredBy === "blue" ? -90 : scoredBy === "orange" ? 90 : 0;
+      ball.vy = 0;
+    }
+
+    function restart() {
+      blueScore = 0;
+      orangeScore = 0;
+      remaining = 90;
+      copyrightClock = 0;
+      nextTimedCopyrightQuestion = 15;
+      overtime = false;
+      gameOver = false;
+      particles.length = 0;
+      goalAnimation.active = false;
+      goalAnimation.team = null;
+      goalAnimation.returnToMenuAfter = false;
+      replayActive = false;
+      replayFrames = [];
+      replayBuffer.length = 0;
+      if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+      pads.forEach(pad => {
+        pad.active = true;
+        pad.cooldown = 0;
+      });
+      resetPositions();
+      updateHud();
+      announce("Fresh kickoff! Score in the orange goal.");
+    }
+
+    function leaveMatch() {
+      if (!matchStarted || gameOver) return;
+
+      const wasRanked = gameMode === "ranked" || gameMode === "ranked2v2";
+      gameOver = true;
+      matchStarted = false;
+      quizOpen = false;
+      replayActive = false;
+      goalAnimation.active = false;
+      if (replayTimer) {
+        clearTimeout(replayTimer);
+        replayTimer = null;
+      }
+      document.getElementById("copyrightQuiz").classList.add("is-hidden");
+
+      if (wasRanked) {
+        changeRank(false, gameMode);
+        announce("Match abandoned — ranked loss. You dropped one rank.");
+      } else {
+        announce("Match left. Returning to the main menu...");
+      }
+      setTimeout(returnToMenu, wasRanked ? 900 : 500);
+    }
+
+    function returnToMenu() {
+      matchStarted = false;
+      gameOver = false;
+      quizOpen = false;
+      replayActive = false;
+      replayFrames = [];
+      replayBuffer.length = 0;
+      if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+      copyrightQuiz.classList.add("is-hidden");
+      modeMenu.classList.remove("is-hidden");
+      statusEl.textContent = "Choose a match type to kick off.";
+    }
+
+    function captureReplayFrame() {
+      if (!matchStarted || gameOver || quizOpen || replayActive || goalAnimation.active) return;
+      replayBuffer.push({
+        player: { x: player.x, y: player.y, angle: player.angle, boost: player.boost, boosting: player.boosting },
+        teammate: { x: teammate.x, y: teammate.y, angle: teammate.angle, boost: teammate.boost, boosting: teammate.boosting },
+        bot: { x: bot.x, y: bot.y, angle: bot.angle, boost: bot.boost, boosting: bot.boosting },
+        bot2: { x: bot2.x, y: bot2.y, angle: bot2.angle, boost: bot2.boost, boosting: bot2.boosting },
+        ball: { x: ball.x, y: ball.y }
+      });
+      const maxFrames = Math.ceil(REPLAY_SECONDS * 60) + 10;
+      if (replayBuffer.length > maxFrames) replayBuffer.splice(0, replayBuffer.length - maxFrames);
+    }
+
+    function startGoalReplay(team, returnToMenuAfter = false) {
+      replayFrames = replayBuffer.slice();
+      replayBuffer.length = 0;
+      replayActive = replayFrames.length > 1;
+      replayStarted = performance.now();
+      replayDuration = replayActive ? REPLAY_SECONDS * 1000 : 0;
+
+      if (!replayActive) {
+        if (returnToMenuAfter) setTimeout(returnToMenu, 2200);
+        else if (!gameOver && matchStarted) showCopyrightQuiz();
+        return;
+      }
+
+      announce(`${team === "blue" ? "Blue" : "Orange"} goal — REPLAY`);
+      replayTimer = setTimeout(() => {
+        replayActive = false;
+        replayFrames = [];
+        replayTimer = null;
+        if (returnToMenuAfter) {
+          setTimeout(returnToMenu, 700);
+        } else if (!gameOver && matchStarted) {
+          showCopyrightQuiz();
+        }
+      }, replayDuration);
+    }
+
+    function playGoalAnimation(team, returnToMenuAfter = false) {
+      goalAnimation.active = true;
+      goalAnimation.team = team;
+      goalAnimation.started = performance.now();
+      goalAnimation.duration = 1.15;
+      goalAnimation.returnToMenuAfter = returnToMenuAfter;
+      const color = team === "blue" ? "#32d7ff" : "#ff8a35";
+      addParticles(team === "blue" ? 905 : 55, 270, color, 55);
+    }
+
+    function addParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          color,
+          vx: (Math.random() - .5) * 240,
+          vy: (Math.random() - .5) * 240,
+          life: .35 + Math.random() * .55,
+          max: .9
+        });
+      }
+    }
+
+
+    function distanceForBot(car, x, y) {
+      return Math.hypot(x - car.x, y - car.y);
+    }
+    function carPhysics(car, isPlayer, dt) {
+      let accelerate = false;
+      let direction = 1;
+      let turn = 0;
+      let boost = false;
+      const slowed = isPlayer === true && performance.now() < playerSlowUntil;
+
+      if (isPlayer === true) {
+        accelerate = Boolean(keys.KeyW || keys.KeyS || keys.touchForward);
+        direction = (keys.KeyS || keys.touchReverse) ? -1 : 1;
+        turn = (keys.KeyA || keys.touchLeft ? -1 : 0) + (keys.KeyD || keys.touchRight ? 1 : 0);
+        boost = Boolean((keys.Space || keys.touchBoost) && car.boost > 0 && accelerate && direction > 0);
+      } else if (isPlayer === "teammate") {
+        accelerate = Boolean(keys.ArrowUp || keys.ArrowDown);
+        direction = keys.ArrowDown ? -1 : 1;
+        turn = (keys.ArrowLeft ? -1 : 0) + (keys.ArrowRight ? 1 : 0);
+        boost = Boolean(keys.KeyL && car.boost > 0 && accelerate && direction > 0);
+      } else if (gameMode === "local") {
+        accelerate = Boolean(keys.ArrowUp || keys.ArrowDown);
+        direction = keys.ArrowDown ? -1 : 1;
+        turn = (keys.ArrowLeft ? -1 : 0) + (keys.ArrowRight ? 1 : 0);
+        boost = Boolean(keys.KeyL && car.boost > 0 && accelerate && direction > 0);
+      } else {
+        const aiIsSecondBot = isPlayer === "bot2";
+        const activeBotDrift = aiIsSecondBot ? bot2DriftActive : botDriftActive;
+        const setBotDrift = value => { if (aiIsSecondBot) bot2DriftActive = value; else botDriftActive = value; };
+        let aiDriftMemory = aiIsSecondBot ? bot2DriftMemory : botDriftMemory;
+        // High-performance ranked bot AI.
+        // The bot predicts the ball, chooses a contact point, defends its goal,
+        // and drives through the ball instead of simply chasing its current position.
+        const skill = (gameMode === "ranked" || gameMode === "ranked2v2") ? rankedBotSkill : 3;
+        const profiles = [
+          { lead:.05, aim:68, turn:1.70, maxPredict:.40, boost:.18, drift:.48, aggression:.70, reverse:.08 },
+          { lead:.10, aim:63, turn:1.95, maxPredict:.52, boost:.30, drift:.62, aggression:.82, reverse:.14 },
+          { lead:.17, aim:58, turn:2.20, maxPredict:.66, boost:.45, drift:.74, aggression:.92, reverse:.20 },
+          { lead:.25, aim:53, turn:2.50, maxPredict:.82, boost:.62, drift:.84, aggression:1.02, reverse:.28 },
+          { lead:.34, aim:49, turn:2.85, maxPredict:1.00, boost:.78, drift:.92, aggression:1.12, reverse:.38 },
+          { lead:.43, aim:46, turn:3.15, maxPredict:1.18, boost:.91, drift:.97, aggression:1.22, reverse:.52 },
+          { lead:.52, aim:43, turn:3.55, maxPredict:1.38, boost:1.00, drift:.995, aggression:1.32, reverse:.68 },
+          { lead:.68, aim:39, turn:4.20, maxPredict:1.68, boost:1.12, drift:1.00, aggression:1.55, reverse:.90 }
+        ];
+        const profile = profiles[Math.max(0, Math.min(7, skill - 1))];
+        const carSpeed = Math.hypot(car.vx, car.vy);
+        const ballSpeed = Math.hypot(ball.vx, ball.vy);
+        const distBall = distanceForBot(car, ball.x, ball.y);
+
+        // Estimate arrival time from both distance and current speed.
+        const effectiveSpeed = Math.max(170, carSpeed + 300);
+        const travelTime = Math.min(profile.maxPredict, Math.max(.08, distBall / effectiveSpeed));
+        const leadTime = Math.min(profile.maxPredict,
+          profile.lead + travelTime * (.55 + skill * .055));
+
+        let predictedX = ball.x + ball.vx * leadTime;
+        let predictedY = ball.y + ball.vy * leadTime;
+
+        // Add a little second-order prediction at high ranks. This makes the bot
+        // anticipate where a fast-moving ball is going rather than its current spot.
+        if (skill >= 5) {
+          predictedX += ball.vx * Math.min(.55, leadTime) * (skill >= 8 ? .48 : .32);
+          predictedY += ball.vy * Math.min(.55, leadTime) * (skill >= 8 ? .48 : .32);
+        }
+        // High-rank bots simulate a little farther ahead, including wall bounces,
+        // so they can intercept fast clears instead of chasing the ball's current spot.
+        if (skill >= 6 && ballSpeed > 120) {
+          let simX = ball.x, simY = ball.y;
+          let simVx = ball.vx, simVy = ball.vy;
+          let simT = leadTime;
+          const slices = skill >= 8 ? 12 : skill === 7 ? 9 : 6;
+          const step = leadTime / slices;
+          for (let i = 0; i < slices; i++) {
+            simX += simVx * step;
+            simY += simVy * step;
+            if (simY < 25 || simY > WORLD.h - 25) { simY = Math.max(25, Math.min(WORLD.h - 25, simY)); simVy *= -.72; }
+            if (simX < 25 || simX > WORLD.w - 25) { simX = Math.max(25, Math.min(WORLD.w - 25, simX)); simVx *= -.72; }
+            simVx *= .985;
+            simVy *= .985;
+          }
+          predictedX = simX;
+          predictedY = simY;
+        }
+        predictedX = Math.max(45, Math.min(WORLD.w - 45, predictedX));
+        predictedY = Math.max(45, Math.min(WORLD.h - 45, predictedY));
+
+        // Champion gets a much deeper read of the play: it reacts to the
+        // player's position as well as the ball, so simple cuts and soft clears
+        // are much harder to exploit.
+        if (skill >= 8) {
+          const playerLead = Math.min(.55, Math.max(.12, distBall / 900));
+          predictedX = predictedX * .72 + (player.x + player.vx * playerLead) * .28;
+          predictedY = predictedY * .72 + (player.y + player.vy * playerLead) * .28;
+          predictedX = Math.max(45, Math.min(WORLD.w - 45, predictedX));
+          predictedY = Math.max(45, Math.min(WORLD.h - 45, predictedY));
+        }
+
+        const enemyGoalX = 35;
+        const enemyGoalY = WORLD.h / 2;
+        const ownGoalX = WORLD.w - 35;
+        const is2v2AI = gameMode.includes("2v2");
+        const botMate = aiIsSecondBot ? bot : bot2;
+        const botMateDist = is2v2AI ? distanceForBot(botMate, ball.x, ball.y) : 9999;
+        const botMateToGoal = is2v2AI ? Math.hypot(botMate.x - enemyGoalX, botMate.y - enemyGoalY) : 9999;
+        const thisToGoal = Math.hypot(car.x - enemyGoalX, car.y - enemyGoalY);
+        const ballOwnHalf = ball.x > WORLD.w * .52;
+        const ballInDangerLane = ball.x > WORLD.w * .70 && Math.abs(ball.y - WORLD.h / 2) < WORLD.goalH * 1.15;
+
+        // 2v2 team roles: the higher the rank, the more deliberately the bots
+        // spread out. One bot can stay home as a goalkeeper while the other attacks.
+        // They also look for passing/crossing lanes instead of both chasing the ball.
+        let teamRole = "attack";
+        if (is2v2AI && skill >= 4) {
+          const mateAttacking = botMate.x < car.x - 70;
+          const shouldGoalie = ballOwnHalf && (mateAttacking || ballInDangerLane) &&
+            thisToGoal < botMateToGoal + 135;
+          if (shouldGoalie) teamRole = "goalie";
+          else if (botMateDist + 55 < distBall && botMate.x < car.x + 90) teamRole = "support";
+        }
+
+        // Defend intelligently when the ball is threatening the bot's goal.
+        const danger = predictedX > WORLD.w * (.67 - skill * .012) &&
+          Math.abs(predictedY - WORLD.h / 2) < WORLD.goalH * .82;
+
+        let targetX, targetY;
+        let shotMode = false;
+
+        if (danger || teamRole === "goalie") {
+          // Get between the ball and the goal, slightly offset toward the side
+          // where the ball is moving. High ranks intercept rather than retreat.
+          const goalDx = ownGoalX - predictedX;
+          const goalDy = WORLD.h / 2 - predictedY;
+          const gl = Math.hypot(goalDx, goalDy) || 1;
+          const toGoalX = goalDx / gl;
+          const toGoalY = goalDy / gl;
+          const interceptOffset = Math.max(42, 78 - skill * 4);
+          targetX = predictedX + toGoalX * interceptOffset;
+          targetY = predictedY + toGoalY * interceptOffset;
+          if (teamRole === "goalie") {
+            // Hold a real goalkeeper position near the goal instead of following
+            // the ball all the way upfield. Slide laterally to cover the shot lane.
+            targetX = Math.max(WORLD.w - 125, predictedX + toGoalX * 95);
+            targetY = WORLD.h / 2 + (predictedY - WORLD.h / 2) * .72;
+            if (ballSpeed > 130) targetY += ball.vy * .08;
+          } else if (skill >= 5 && ballSpeed > 170) {
+            targetY += ball.vy * .10;
+          }
+        } else {
+          // Attack: approach the ball from the side opposite the opponent goal,
+          // so the bot arrives with its nose already pointed toward the net.
+          // Normally aim at the opponent goal. In 2v2, stronger bots can turn
+          // an attack into a cross when their teammate has a better lane.
+          let finishX = enemyGoalX, finishY = enemyGoalY;
+          let crossing = false;
+          if (is2v2AI && skill >= 4 && teamRole === "support") {
+            const teammateAhead = botMate.x < predictedX - 45;
+            const teammateOpen = Math.abs(botMate.y - predictedY) > 45 || botMateToGoal < thisToGoal - 100;
+            const centralLane = predictedY > WORLD.h * .25 && predictedY < WORLD.h * .75;
+            if (teammateAhead && teammateOpen && centralLane) {
+              finishX = botMate.x - 42;
+              finishY = botMate.y;
+              crossing = true;
+            }
+          }
+          const goalDx = finishX - predictedX;
+          const goalDy = finishY - predictedY;
+          const goalLen = Math.hypot(goalDx, goalDy) || 1;
+          const gx = goalDx / goalLen;
+          const gy = goalDy / goalLen;
+
+          // At high ranks, choose a better shot lane instead of always aiming at
+          // the exact center. This creates angled shots and fewer harmless touches.
+          let shotY = predictedY;
+          if (skill >= 5) {
+            const preferredY = predictedY + ball.vy * .18;
+            const topGap = Math.abs(preferredY - (WORLD.h / 2 - WORLD.goalH / 2));
+            const bottomGap = Math.abs(preferredY - (WORLD.h / 2 + WORLD.goalH / 2));
+            if (topGap < bottomGap) shotY -= Math.min(38, topGap * .18);
+            else shotY += Math.min(38, bottomGap * .18);
+          }
+
+          targetX = predictedX - gx * profile.aim;
+          targetY = shotY - gy * profile.aim;
+
+          // Orange bots attack the left goal. Never let an attack contact point
+          // put the bot on the left/enemy-goal side of the ball, which can cause
+          // a bad touch back toward its own right-side goal. Reposition to the
+          // safe side first, then strike through the ball toward the enemy net.
+          if (targetX < predictedX + 18) {
+            targetX = predictedX + Math.max(42, profile.aim * .78);
+          }
+          if (crossing) {
+            // Approach from behind the ball so the touch sends it across the field
+            // toward the waiting teammate rather than straight at the goal.
+            targetX = predictedX - gx * (profile.aim + 18);
+            targetY = predictedY - gy * (profile.aim + 18);
+          }
+
+          // Diamond/Champion deliberately attack away from the player's side of
+          // the ball, making awkward saves and angled shots instead of center hits.
+          if (skill >= 6) {
+            const playerSide = player.y - predictedY;
+            if (Math.abs(playerSide) > 28) {
+              targetY += (playerSide > 0 ? -1 : 1) * Math.min(52, Math.abs(playerSide) * .32);
+            }
+          }
+          shotMode = true;
+        }
+
+        // Keep targets inside the arena and bias away from the side walls when
+        // there is enough space to do so.
+        targetX = Math.max(38, Math.min(WORLD.w - 38, targetX));
+        targetY = Math.max(38, Math.min(WORLD.h - 38, targetY));
+
+        const dx = targetX - car.x;
+        const dy = targetY - car.y;
+        const targetAngle = Math.atan2(dy, dx);
+        let difference = Math.atan2(Math.sin(targetAngle - car.angle), Math.cos(targetAngle - car.angle));
+
+        const forwardX = Math.cos(car.angle);
+        const forwardY = Math.sin(car.angle);
+        const lateral = car.vx * -forwardY + car.vy * forwardX;
+        const lateralCorrection = Math.atan2(lateral, Math.max(85, carSpeed));
+        difference -= lateralCorrection * (skill >= 8 ? 1.38 : skill >= 6 ? 1.15 : skill >= 4 ? .72 : .35);
+
+        // High ranks react almost immediately. Lower ranks retain a little noise
+        // so the progression still feels meaningful.
+        let steeringError = 0;
+        if (skill <= 3) steeringError = (Math.random() - .5) * (.30 - skill * .055);
+        if (skill >= 8) steeringError = 0;
+        difference += steeringError;
+
+        turn = Math.max(-1, Math.min(1, difference * profile.turn));
+
+        // Reverse only when the target is genuinely behind the car. This prevents
+        // the high-rank bot from wasting time doing a huge turn-around.
+        direction = 1;
+        if (Math.abs(difference) > 2.35 && carSpeed < 230 && Math.random() < profile.reverse) {
+          direction = -1;
+          turn *= -0.78;
+        }
+
+        accelerate = Math.abs(difference) < (1.72 + skill * .025) || carSpeed < 125;
+
+        // Higher ranks commit to the play sooner when they have a realistic
+        // interception line, instead of slowing down to re-aim every turn.
+        if (skill >= 5 && distBall > 170 && Math.abs(difference) < .85) {
+          accelerate = true;
+        }
+        if (skill >= 6 && distBall > 260 && Math.abs(difference) < .48) {
+          accelerate = true;
+        }
+
+        // Once close, focus on making a strong touch instead of orbiting the ball.
+        const ballAngle = Math.atan2(predictedY - car.y, predictedX - car.x);
+        const ballDifference = Math.atan2(Math.sin(ballAngle - car.angle), Math.cos(ballAngle - car.angle));
+        const contactReady = distBall < 155 && Math.abs(ballDifference) < (.34 + skill * .018);
+        if (contactReady) accelerate = true;
+
+        // Role awareness in 2v2: attackers accelerate into crosses, while a
+        // goalkeeper conserves position and only commits when the ball is close.
+        if (is2v2AI && teamRole === "goalie" && distBall > 210) {
+          accelerate = Math.abs(difference) < 1.35;
+        }
+        if (is2v2AI && teamRole === "support" && distBall > 150 && skill >= 5) {
+          accelerate = true;
+        }
+
+        // Boost for long, clean approaches, defensive saves, and powerful shots.
+        const aligned = Math.abs(difference) < (.30 + (7 - skill) * .018);
+        const longRun = distBall > (125 - skill * 5);
+        boost = false;
+        if (car.boost > 5 && accelerate && direction > 0) {
+          if (danger && distBall > 120 && aligned) boost = Math.random() < profile.boost;
+          if (shotMode && longRun && aligned && teamRole !== "goalie") boost = Math.random() < profile.boost;
+          if (teamRole === "goalie" && ballInDangerLane && distBall > 130 && aligned) boost = Math.random() < profile.boost;
+          if (skill >= 6 && distBall > 250 && Math.abs(difference) < (skill >= 8 ? .28 : .20)) boost = true;
+        }
+
+        // Champion uses boost aggressively when it has a direct line to the play.
+        if (skill >= 7 && car.boost > 8 && direction > 0 &&
+            distBall > (skill >= 8 ? 130 : 170) && Math.abs(difference) < (skill >= 8 ? .34 : .24)) {
+          boost = true;
+        }
+
+        // Champion also uses boost to recover from a bad angle and get back into
+        // the play quickly, rather than arriving late after a missed turn.
+        if (skill >= 7 && car.boost > 12 && direction > 0 &&
+            distBall > (skill >= 8 ? 180 : 220) && Math.abs(difference) < (skill >= 8 ? .72 : .58) && carSpeed < 210) {
+          boost = true;
+        }
+
+        // Drift is also a SPEED technique in this game, not just a turning technique.
+        // Higher ranks deliberately hold drift through fast arcs to stay near the
+        // drift speed cap, while lower ranks only use it occasionally.
+        const sharpTurn = Math.abs(difference);
+        const movingFast = carSpeed > (skill >= 5 ? 82 : 118);
+        const driftThreshold = skill >= 8 ? .10 : skill >= 7 ? .13 : skill >= 6 ? .16 : skill >= 5 ? .20 : skill >= 4 ? .25 : skill >= 3 ? .31 : .37;
+        const driftSpeedRun = carSpeed > (skill >= 8 ? 105 : skill >= 7 ? 115 : skill >= 6 ? 125 : skill >= 5 ? 135 : skill >= 4 ? 150 : 165);
+        const goodDriftLane = distBall > 80 && distBall < (skill >= 4 ? 560 : 430);
+        if (activeBotDrift) {
+          aiDriftMemory -= dt;
+          const shouldKeepSpeedDrifting = skill >= 4 && carSpeed > 125 &&
+            Math.abs(difference) < (skill >= 8 ? .86 : skill >= 6 ? .72 : .55) && distBall > 95;
+          if (aiDriftMemory <= 0 ||
+              (!shouldKeepSpeedDrifting && sharpTurn < .06 && distBall > 200) ||
+              carSpeed < 62) {
+            setBotDrift(false);
+          } else if (shouldKeepSpeedDrifting) {
+            aiDriftMemory = Math.min(aiDriftMemory + dt * (skill >= 6 ? .55 : .28),
+              skill >= 8 ? 1.55 : skill >= 7 ? 1.35 : skill >= 6 ? 1.15 : .82);
+          }
+        } else if (movingFast && distBall > 75 &&
+                   ((sharpTurn > driftThreshold) || (driftSpeedRun && goodDriftLane && skill >= 4))) {
+          const speedDriftChance = skill <= 2 ? .28 + skill * .08 :
+            skill === 3 ? .50 : skill === 4 ? .68 : skill === 5 ? .82 : skill === 6 ? .91 : skill === 7 ? .97 : .995;
+          if (Math.random() < Math.max(profile.drift, speedDriftChance)) {
+            setBotDrift(true);
+            aiDriftMemory = skill >= 8 ? .95 : skill >= 7 ? .82 : skill >= 6 ? .72 : skill >= 5 ? .62 :
+              skill >= 4 ? .50 : skill === 3 ? .38 : .28;
+          }
+        }
+
+        // Emergency recovery: if the ball is close and the bot is facing away,
+        // turn hard instead of calmly driving forward.
+        if (aiIsSecondBot) bot2DriftMemory = aiDriftMemory; else botDriftMemory = aiDriftMemory;
+
+        if (distBall < 105 && Math.abs(ballDifference) > 1.65) {
+          accelerate = true;
+          boost = false;
+          turn = ballDifference > 0 ? 1 : -1;
+          if (skill >= 7) setBotDrift(true);
+        }
+      }
+      const drifting = isPlayer === true ? driftActive : isPlayer === "teammate" ? teammateDriftActive : (gameMode === "local" ? orangeDriftActive : (isPlayer === "bot2" ? bot2DriftActive : botDriftActive));
+      car.angle += turn * (drifting ? 4.8 : 3.0) * dt;
+
+      const slowFactor = slowed ? 0.42 : 1;
+      const thrust = (boost ? 680 : drifting ? 390 : 340) * slowFactor;
+      if (accelerate) {
+        car.vx += Math.cos(car.angle) * thrust * dt * direction;
+        car.vy += Math.sin(car.angle) * thrust * dt * direction;
+      }
+
+      car.boosting = boost && !slowed;
+
+      if (boost) {
+        car.boost = Math.max(0, car.boost - 34 * dt);
+        addParticles(car.x - Math.cos(car.angle) * 23, car.y - Math.sin(car.angle) * 23, car.color, 1);
+      }
+
+      const speed = Math.hypot(car.vx, car.vy);
+      const maxSpeed = (boost ? 540 : drifting ? 360 : 300) * slowFactor;
+
+      if (speed > maxSpeed) {
+        car.vx *= maxSpeed / speed;
+        car.vy *= maxSpeed / speed;
+      }
+
+      const grip = drifting ? .996 : .94;
+      car.vx *= Math.pow(grip, dt * 60);
+      car.vy *= Math.pow(grip, dt * 60);
+      car.x += car.vx * dt;
+      car.y += car.vy * dt;
+
+      if (car.y < car.r || car.y > WORLD.h - car.r) {
+        car.y = Math.max(car.r, Math.min(WORLD.h - car.r, car.y));
+        car.vy *= -.56;
+      }
+
+      if (car.x < car.r || car.x > WORLD.w - car.r) {
+        car.x = Math.max(car.r, Math.min(WORLD.w - car.r, car.x));
+        car.vx *= -.56;
+      }
+    }
+
+    let lastSaveAt = 0;
+
+    function registerSave(car, preX, preY, preVx, preVy, preBallVx, preBallVy) {
+      // A save only counts when the ball was genuinely traveling toward the
+      // defending (blue) goal and the car's touch turns it away.
+      if (car.team !== "blue") return;
+      if (preBallVx >= -35) return;
+      const goalX = 0;
+      const timeToGoal = (goalX - preX) / preBallVx;
+      if (!Number.isFinite(timeToGoal) || timeToGoal <= 0 || timeToGoal > 2.5) return;
+
+      const projectedY = preY + preBallVy * timeToGoal;
+      const goalTop = (WORLD.h - WORLD.goalH) / 2;
+      const goalBottom = (WORLD.h + WORLD.goalH) / 2;
+      if (projectedY < goalTop - ball.r || projectedY > goalBottom + ball.r) return;
+
+      // The touch must actually stop the scoring path, not merely graze the ball.
+      const turnedAway = ball.vx > 25 || Math.abs(ball.vx) < Math.abs(preBallVx) * 0.38;
+      if (!turnedAway) return;
+      if (performance.now() - lastSaveAt < 650) return;
+      lastSaveAt = performance.now();
+
+      const epic = timeToGoal <= 0.90 || (preX < 220 && Math.abs(preBallVx) >= 210);
+      const label = epic ? "EPIC SAVE! 🛡️" : "SAVE! 🛡️";
+      const detail = epic ? "You stopped a shot that was about to score!" : "You cut off a shot on target!";
+      saveAnimation.active = true;
+      saveAnimation.epic = epic;
+      saveAnimation.started = performance.now();
+      saveAnimation.x = ball.x;
+      saveAnimation.y = ball.y;
+      announce(`${label} ${detail}`);
+      addParticles(ball.x, ball.y, epic ? "#fff5a7" : "#54e6ff", epic ? 18 : 10);
+
+      questProgress.saves++;
+      if (epic) questProgress.epicSaves++;
+      refreshQuestCompletion();
+    }
+
+    function collideCarBall(car) {
+      const preX = ball.x, preY = ball.y;
+      const preBallVx = ball.vx, preBallVy = ball.vy;
+      const dx = ball.x - car.x;
+      const dy = ball.y - car.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const minimum = car.r + ball.r;
+
+      if (dist >= minimum) return;
+
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const overlap = minimum - dist;
+
+      ball.x += nx * overlap;
+      ball.y += ny * overlap;
+
+      const impact = Math.max(250, Math.hypot(car.vx, car.vy) * 1.32);
+      ball.vx += nx * impact + car.vx * .18;
+      ball.vy += ny * impact + car.vy * .18;
+      registerSave(car, preX, preY, car.vx, car.vy, preBallVx, preBallVy);
+      car.vx -= nx * 25;
+      car.vy -= ny * 25;
+      addParticles(ball.x, ball.y, "#ffffff", 4);
+    }
+
+    function collideCars() {
+      const cars = gameMode.includes("2v2") ? [player, teammate, bot, bot2] : [player, bot];
+      for (let i = 0; i < cars.length; i++) {
+        for (let j = i + 1; j < cars.length; j++) {
+          const a = cars[i], b = cars[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const minimum = a.r + b.r;
+          if (dist >= minimum) continue;
+          const nx = dx / dist, ny = dy / dist;
+          const overlap = minimum - dist;
+          a.x -= nx * overlap * .5; a.y -= ny * overlap * .5;
+          b.x += nx * overlap * .5; b.y += ny * overlap * .5;
+          const relativeSpeed = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (relativeSpeed < 0) {
+            const impulse = -relativeSpeed * .72;
+            a.vx -= nx * impulse; a.vy -= ny * impulse;
+            b.vx += nx * impulse; b.vy += ny * impulse;
+          }
+          addParticles((a.x + b.x) / 2, (a.y + b.y) / 2, "#ffffff", 4);
+        }
+      }
+    }
+
+    function collectPads(dt) {
+      pads.forEach(pad => {
+        if (!pad.active) {
+          pad.cooldown -= dt;
+          if (pad.cooldown <= 0) pad.active = true;
+          return;
+        }
+
+        const activeCars = gameMode.includes("2v2") ? [player, teammate, bot, bot2] : [player, bot];
+        activeCars.forEach(car => {
+          if (!pad.active) return;
+          if (Math.hypot(car.x - pad.x, car.y - pad.y) < 32) {
+            pad.active = false;
+            pad.cooldown = 5;
+            addParticles(pad.x, pad.y, pad.type === "full" ? "#fff5a7" : "#ffd54a", 13);
+
+            // Only the player gets a copyright-learning challenge from a boost orb.
+            // The match pauses, and a correct answer awards the orb's energy.
+            if (car === player) {
+              quizSource = "boost";
+              quizPadReward = pad.type === "full" ? 100 : 25;
+              showCopyrightQuiz("boost");
+            } else {
+              car.boost = Math.min(100, car.boost + (pad.type === "full" ? 100 : 25));
+            }
+          }
+        });
+      });
+    }
+
+    function update(dt) {
+      if (matchStarted && !gameOver && !quizOpen && !goalAnimation.active && !replayActive) {
+        remaining = Math.max(0, remaining - dt);
+        copyrightClock += dt;
+
+        // Every 15 seconds of actual running gameplay, pause for a copyright question.
+        // The quiz itself does not count toward the 15-second clock.
+        // Timed copyright challenges are for Casual matches only.
+        // Ranked 1v1 and Ranked 2v2 never interrupt competitive play.
+        const casualMatch = gameMode === "bot" || gameMode === "local" || gameMode === "2v2";
+        if (casualMatch && copyrightClock >= nextTimedCopyrightQuestion) {
+          nextTimedCopyrightQuestion += 15;
+          showCopyrightQuiz("timer");
+          return;
+        }
+
+        if (remaining === 0 && !overtime) {
+          if (blueScore === orangeScore) {
+            overtime = true;
+            announce("OVERTIME! First goal wins! 🏆");
+          } else {
+            gameOver = true;
+            const result = blueScore > orangeScore
+              ? "Full time — Blue team wins!"
+              : "Full time — Orange team wins!";
+
+            if (gameMode === "ranked" || gameMode === "ranked2v2") {
+              changeRank(blueScore > orangeScore, gameMode);
+            } else {
+              if (blueScore > orangeScore) { questProgress.wins++; refreshQuestCompletion(); }
+
+              announce(result + " Returning to the main menu...");
+            }
+            setTimeout(returnToMenu, 2200);
+          }
+        }
+
+        carPhysics(player, true, dt);
+        if (gameMode.includes("2v2")) {
+          carPhysics(teammate, "teammate", dt);
+          carPhysics(bot, false, dt);
+          carPhysics(bot2, "bot2", dt);
+        } else {
+          carPhysics(bot, false, dt);
+        }
+        collideCars();
+        const activeCars = gameMode.includes("2v2") ? [player, teammate, bot, bot2] : [player, bot];
+        activeCars.forEach(collideCarBall);
+
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+        ball.vx *= Math.pow(.992, dt * 60);
+        ball.vy *= Math.pow(.992, dt * 60);
+
+        captureReplayFrame();
+
+        const inGoal = ball.y > (WORLD.h - WORLD.goalH) / 2 && ball.y < (WORLD.h + WORLD.goalH) / 2;
+
+        if (ball.x < -ball.r && inGoal) {
+          orangeScore++;
+          const orangeMercy = !overtime && orangeScore - blueScore >= 3;
+          if (overtime || orangeMercy) {
+            gameOver = true;
+            if (gameMode === "ranked" || gameMode === "ranked2v2") changeRank(false, gameMode);
+            else if (orangeMercy) announce(`MERCY! Orange wins ${orangeScore}-${blueScore}.`);
+            playGoalAnimation("orange", true);
+          } else {
+            playGoalAnimation("orange", false);
+          }
+        } else if (ball.x > WORLD.w + ball.r && inGoal) {
+          blueScore++;
+          questProgress.goals++;
+          refreshQuestCompletion();
+          const blueMercy = !overtime && blueScore - orangeScore >= 3;
+          if (overtime || blueMercy) {
+            gameOver = true;
+            if (gameMode === "ranked" || gameMode === "ranked2v2") changeRank(true, gameMode);
+            else if (blueMercy) {
+              questProgress.wins++;
+              refreshQuestCompletion();
+              saveQuestProgress();
+              announce(`MERCY! Blue wins ${blueScore}-${orangeScore}.`);
+            }
+            playGoalAnimation("blue", true);
+          } else {
+            playGoalAnimation("blue", false);
+          }
+        } else {
+          if (ball.y < ball.r || ball.y > WORLD.h - ball.r) {
+            ball.y = Math.max(ball.r, Math.min(WORLD.h - ball.r, ball.y));
+            ball.vy *= -.82;
+          }
+
+          if (!inGoal && (ball.x < ball.r || ball.x > WORLD.w - ball.r)) {
+            ball.x = Math.max(ball.r, Math.min(WORLD.w - ball.r, ball.x));
+            ball.vx *= -.82;
+          }
+        }
+
+        collectPads(dt);
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const particle = particles[i];
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        particle.vx *= .94;
+        particle.vy *= .94;
+        particle.life -= dt;
+
+        if (particle.life <= 0) particles.splice(i, 1);
+      }
+
+      if (announcementUntil && performance.now() > announcementUntil && !gameOver && matchStarted) {
+        statusEl.textContent = "Drive into the ball and score in the orange goal.";
+        announcementUntil = 0;
+      }
+
+      updateHud();
+    }
+
+    function triggerEmote(type) {
+      if (!matchStarted || gameOver || quizOpen || goalAnimation.active || replayActive) return;
+      activeEmote = { type, started: performance.now(), duration: 1.65 };
+      toggleEmoteBar(false);
+    }
+
+    function triggerTeammateEmote(type) {
+      if (!(gameMode === "local" || gameMode === "2v2" || gameMode === "ranked2v2") || !matchStarted || gameOver || quizOpen || goalAnimation.active || replayActive) return;
+      teammateEmote = { type, started: performance.now(), duration: 1.65 };
+      teammateEmoteBarOpen = false;
+    }
+
+    function drawEmotePerson(type, x, y, scale=1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      const accent = type === "thumbs" ? "#54e6ff" : type === "cry" ? "#6ecbff" : type === "laugh" ? "#ffd34e" : "#d8d8d8";
+      ctx.fillStyle = "rgba(3,16,27,.94)";
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.roundRect(-45,-48,90,78,18); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-8,29); ctx.lineTo(0,39); ctx.lineTo(8,29); ctx.closePath(); ctx.fill();
+
+      // Stylized person: head, hair, shirt and arms. No car body.
+      ctx.fillStyle = type === "skeleton" ? "#e9edf2" : "#f2c7a5";
+      ctx.beginPath(); ctx.arc(0,-18,15,0,Math.PI*2); ctx.fill();
+      if (type !== "skeleton") {
+        ctx.fillStyle = type === "laugh" ? "#3b2418" : "#18222c";
+        ctx.beginPath(); ctx.arc(0,-24,15,Math.PI,Math.PI*2); ctx.fill();
+        ctx.fillRect(-14,-24,28,7);
+      }
+      ctx.fillStyle = type === "skeleton" ? "#6f7884" : (type === "laugh" ? "#f0a32f" : "#4f7cff");
+      ctx.beginPath(); ctx.roundRect(-18,-2,36,29,9); ctx.fill();
+      ctx.strokeStyle = type === "skeleton" ? "#f4f4f4" : "#f2c7a5";
+      ctx.lineWidth = 5; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(-16,5); ctx.lineTo(-27,18); ctx.moveTo(16,5); ctx.lineTo(27,18); ctx.stroke();
+
+      if (type === "thumbs") {
+        ctx.strokeStyle="#7df7a7"; ctx.lineWidth=4;
+        ctx.beginPath(); ctx.moveTo(27,18); ctx.lineTo(30,5); ctx.lineTo(34,-2); ctx.lineTo(38,1); ctx.lineTo(36,8); ctx.lineTo(43,8); ctx.stroke();
+      } else if (type === "cry") {
+        ctx.fillStyle="#65c9ff";
+        ctx.beginPath(); ctx.moveTo(-6,-10); ctx.lineTo(-10,0); ctx.lineTo(-3,0); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(6,-10); ctx.lineTo(2,0); ctx.lineTo(9,0); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle="#6ecbff"; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,-12,7,.2,Math.PI-.2); ctx.stroke();
+      } else if (type === "laugh") {
+        ctx.strokeStyle="#26303a"; ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.arc(-6,-18,4,0,Math.PI); ctx.arc(6,-18,4,0,Math.PI); ctx.stroke();
+        ctx.fillStyle="#fff"; ctx.beginPath(); ctx.roundRect(-8,-8,16,8,3); ctx.fill();
+      } else {
+        ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,-18,14,0,Math.PI*2); ctx.stroke();
+        ctx.fillStyle="#18222c"; ctx.fillRect(-6,-22,4,4); ctx.fillRect(2,-22,4,4);
+        ctx.strokeStyle="#fff"; ctx.beginPath(); ctx.moveTo(-6,-13); ctx.lineTo(6,-13); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-10,2); ctx.lineTo(10,2); ctx.moveTo(-7,7); ctx.lineTo(7,7); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawCar(car) {
+      ctx.save();
+      ctx.translate(car.x, car.y);
+      ctx.rotate(car.angle);
+
+      const carSlowed = car === player && performance.now() < playerSlowUntil;
+      if (carSlowed) {
+        // Flash the whole car while the 5-second slowdown is active.
+        const flashOn = Math.floor(performance.now() / 170) % 2 === 0;
+        ctx.globalAlpha = flashOn ? 0.42 : 1;
+      }
+
+      const teamBorder = car.team === "orange" ? "#ff8a35" : "#32d7ff";
+      ctx.fillStyle = teamBorder;
+      ctx.beginPath();
+      ctx.roundRect(-27, -19, 54, 38, 11);
+      ctx.fill();
+
+      ctx.fillStyle = "#03121e";
+      ctx.beginPath();
+      ctx.roundRect(-24, -16, 48, 32, 9);
+      ctx.fill();
+
+      ctx.fillStyle = car.color;
+      ctx.beginPath();
+      ctx.roundRect(-19, -13, 38, 26, 7);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,.48)";
+      ctx.beginPath();
+      ctx.roundRect(3, -10, 12, 20, 4);
+      ctx.fill();
+
+      ctx.fillStyle = "#071923";
+      ctx.fillRect(-22, -17, 9, 5);
+      ctx.fillRect(-22, 12, 9, 5);
+      ctx.fillRect(13, -17, 9, 5);
+      ctx.fillRect(13, 12, 9, 5);
+
+      if (car.boosting) {
+        ctx.fillStyle = "#fff5a7";
+        ctx.beginPath();
+        ctx.moveTo(-21, -8);
+        ctx.lineTo(-39 - Math.random() * 12, 0);
+        ctx.lineTo(-21, 8);
+        ctx.fill();
+      }
+
+      if (car === player && selectedSkin === "jester") {
+        // Jester hat: a real hat sitting above the car, with a band, three floppy points, and bells.
+        ctx.save();
+        ctx.translate(0, -17);
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath(); ctx.roundRect(-21, -2, 42, 8, 4); ctx.fill();
+        ctx.fillStyle = "#7c3aed";
+        ctx.beginPath(); ctx.roundRect(-16, -13, 32, 12, 5); ctx.fill();
+        ctx.fillStyle = "#f43f5e";
+        ctx.beginPath(); ctx.moveTo(-13,-10); ctx.quadraticCurveTo(-22,-24,-13,-30); ctx.quadraticCurveTo(-7,-20,-3,-10); ctx.fill();
+        ctx.fillStyle = "#22c55e";
+        ctx.beginPath(); ctx.moveTo(-4,-10); ctx.quadraticCurveTo(0,-27,5,-33); ctx.quadraticCurveTo(10,-25,8,-10); ctx.fill();
+        ctx.fillStyle = "#7c3aed";
+        ctx.beginPath(); ctx.moveTo(7,-10); ctx.quadraticCurveTo(19,-24,26,-22); ctx.quadraticCurveTo(27,-10,14,-7); ctx.fill();
+        ctx.fillStyle = "#ffd34e";
+        [[-13,-30],[5,-33],[26,-22]].forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fill(); });
+        ctx.restore();
+      }
+
+      // Rank skin emblem: put the rank symbol ON the actual car skin while driving.
+      // It is a decal on the body, not a floating badge above the car.
+      if (car === player) {
+        const rankSkin = skins.find(s => s.id === selectedSkin && rankInfo[s.unlock]);
+        if (rankSkin) {
+          const ri = rankInfo[rankSkin.unlock];
+          ctx.save();
+          ctx.translate(0, 0);
+          drawRankInsignia(ctx, rankSkin.unlock, 0, 0, 0.72);
+          ctx.restore();
+        }
+      }
+
+      if (car === player && selectedSkin === "crown") {
+        // Crown: a clearly visible golden crown sitting on top of the car.
+        ctx.save();
+        ctx.translate(0, -18);
+        ctx.fillStyle = "#ffd700";
+        ctx.strokeStyle = "#9a6b00";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-20, 3); ctx.lineTo(-17,-13); ctx.lineTo(-7,-5);
+        ctx.lineTo(0,-16); ctx.lineTo(7,-5); ctx.lineTo(17,-13);
+        ctx.lineTo(20,3); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#ffea70";
+        ctx.beginPath(); ctx.roundRect(-21, 1, 42, 7, 3); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.arc(-8,4,2.2,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(0,4,2.2,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#a855f7"; ctx.beginPath(); ctx.arc(8,4,2.2,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function getReplayFrame() {
+      if (!replayActive || replayFrames.length === 0) return null;
+      const elapsed = Math.max(0, Math.min(replayDuration, performance.now() - replayStarted));
+      const progress = replayDuration ? elapsed / replayDuration : 1;
+      const index = Math.min(replayFrames.length - 1, Math.floor(progress * (replayFrames.length - 1)));
+      return replayFrames[index];
+    }
+
+    function render() {
+      let replayLiveState = null;
+      if (replayActive) {
+        const frame = getReplayFrame();
+        if (frame) {
+          replayLiveState = {
+            player: { ...player }, teammate: { ...teammate }, bot: { ...bot }, bot2: { ...bot2 }, ball: { ...ball }
+          };
+          const apply = (target, data) => {
+            target.x = data.x; target.y = data.y; target.angle = data.angle;
+            if ("boost" in data) target.boost = data.boost;
+            if ("boosting" in data) target.boosting = data.boosting;
+          };
+          apply(player, frame.player);
+          apply(teammate, frame.teammate);
+          apply(bot, frame.bot);
+          apply(bot2, frame.bot2);
+          ball.x = frame.ball.x;
+          ball.y = frame.ball.y;
+        }
+      }
+
+      const field = ctx.createLinearGradient(0, 0, WORLD.w, WORLD.h);
+      field.addColorStop(0, "#0a4363");
+      field.addColorStop(1, "#062c47");
+      ctx.fillStyle = field;
+      ctx.fillRect(0, 0, WORLD.w, WORLD.h);
+
+      for (let x = 0; x < WORLD.w; x += 80) {
+        ctx.fillStyle = x % 160 === 0 ? "rgba(88,199,236,.055)" : "rgba(0,0,0,.025)";
+        ctx.fillRect(x, 0, 80, WORLD.h);
+      }
+
+      const goalTop = (WORLD.h - WORLD.goalH) / 2;
+      ctx.fillStyle = "rgba(50,215,255,.22)";
+      ctx.fillRect(0, goalTop, 28, WORLD.goalH);
+      ctx.fillStyle = "rgba(255,138,53,.22)";
+      ctx.fillRect(WORLD.w - 28, goalTop, 28, WORLD.goalH);
+
+      ctx.strokeStyle = "rgba(230,250,255,.48)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(1.5, 1.5, WORLD.w - 3, WORLD.h - 3);
+
+      ctx.beginPath();
+      ctx.moveTo(WORLD.w / 2, 0);
+      ctx.lineTo(WORLD.w / 2, WORLD.h);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(WORLD.w / 2, WORLD.h / 2, 72, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, goalTop);
+      ctx.lineTo(28, goalTop);
+      ctx.lineTo(28, goalTop + WORLD.goalH);
+      ctx.lineTo(0, goalTop + WORLD.goalH);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(WORLD.w, goalTop);
+      ctx.lineTo(WORLD.w - 28, goalTop);
+      ctx.lineTo(WORLD.w - 28, goalTop + WORLD.goalH);
+      ctx.lineTo(WORLD.w, goalTop + WORLD.goalH);
+      ctx.stroke();
+
+      pads.forEach(pad => {
+        if (!pad.active) return;
+        const orbColor = pad.type === "full" ? "#fff5a7" : "#ffd54a";
+        const orbRadius = pad.type === "full" ? 10 : 7;
+
+        ctx.fillStyle = pad.type === "full" ? "rgba(255,245,167,.2)" : "rgba(255,213,74,.15)";
+        ctx.beginPath();
+        ctx.arc(pad.x, pad.y, 19, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = orbColor;
+        ctx.beginPath();
+        ctx.arc(pad.x, pad.y, orbRadius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      particles.forEach(particle => {
+        ctx.globalAlpha = Math.max(0, particle.life / particle.max);
+        ctx.fillStyle = particle.color;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      const ballGradient = ctx.createRadialGradient(ball.x - 5, ball.y - 7, 3, ball.x, ball.y, ball.r + 3);
+      ballGradient.addColorStop(0, "#ffffff");
+      ballGradient.addColorStop(.32, "#d8edf4");
+      ballGradient.addColorStop(1, "#5e8395");
+
+      ctx.fillStyle = ballGradient;
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#294d61";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      drawCar(player);
+      if (gameMode.includes("2v2")) drawCar(teammate);
+      drawCar(bot);
+      if (gameMode.includes("2v2")) drawCar(bot2);
+
+      if (emoteBarOpen && matchStarted && !gameOver && !quizOpen && !goalAnimation.active && !replayActive) {
+        const barX = 18, barY = WORLD.h - 82, barW = 310, barH = 64;
+        ctx.save();
+        ctx.fillStyle = "rgba(4,18,31,.68)";
+        ctx.strokeStyle = "rgba(126,221,255,.42)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW, barH, 12);
+        ctx.fill(); ctx.stroke();
+        const labels = ["THUMBS", "CRY", "LAUGH", "SKELETON"];
+        const symbols = ["👍", "😭", "😂", "💀"];
+        for (let i = 0; i < 4; i++) {
+          const x = barX + 7 + i * 75;
+          ctx.fillStyle = "rgba(18,63,91,.72)";
+          ctx.beginPath(); ctx.roundRect(x, barY + 7, 68, 50, 9); ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.stroke();
+          ctx.fillStyle = "#ffffff"; ctx.font = "bold 10px Arial"; ctx.textAlign = "left";
+          ctx.fillText(String(i + 1), x + 6, barY + 17);
+          ctx.font = "20px Arial"; ctx.textAlign = "center";
+          ctx.fillText(symbols[i], x + 34, barY + 36);
+          ctx.fillStyle = "rgba(210,240,255,.75)"; ctx.font = "bold 7px Arial";
+          ctx.fillText(labels[i], x + 34, barY + 50);
+        }
+        ctx.restore();
+      }
+
+      if (activeEmote.type) {
+        const elapsed = (performance.now() - activeEmote.started) / 1000;
+        const progress = Math.min(1, elapsed / activeEmote.duration);
+        if (progress >= 1) activeEmote.type = null;
+        else {
+          const rise = progress * 24;
+          const alpha = progress < .12 ? progress / .12 : 1 - Math.max(0, progress - .72) / .28;
+          ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+          drawEmotePerson(activeEmote.type, player.x, player.y - 74 - rise, 0.82);
+          ctx.restore();
+        }
+      }
+
+      if (teammateEmote.type) {
+        const elapsed = (performance.now() - teammateEmote.started) / 1000;
+        const progress = Math.min(1, elapsed / teammateEmote.duration);
+        if (progress >= 1) teammateEmote.type = null;
+        else {
+          const rise = progress * 24;
+          const alpha = progress < .12 ? progress / .12 : 1 - Math.max(0, progress - .72) / .28;
+          ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+          const orangeEmoteCar = gameMode === "local" ? bot : teammate;
+          drawEmotePerson(teammateEmote.type, orangeEmoteCar.x, orangeEmoteCar.y - 74 - rise, 0.82);
+          ctx.restore();
+        }
+      }
+
+      if (teammateEmoteBarOpen && (gameMode === "local" || gameMode === "2v2" || gameMode === "ranked2v2") && matchStarted && !gameOver && !quizOpen && !goalAnimation.active && !replayActive) {
+        const barW = 310, barH = 64;
+        const barX = WORLD.w - barW - 18, barY = WORLD.h - 82;
+        ctx.save();
+        ctx.fillStyle = "rgba(4,18,31,.68)";
+        ctx.strokeStyle = "rgba(255,138,53,.48)";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, 12); ctx.fill(); ctx.stroke();
+        const labels = ["THUMBS", "CRY", "LAUGH", "SKELETON"];
+        const symbols = ["👍", "😭", "😂", "💀"];
+        const binds = ["7", "8", "9", "0"];
+        for (let i = 0; i < 4; i++) {
+          const x = barX + 7 + i * 75;
+          ctx.fillStyle = "rgba(91,45,23,.72)";
+          ctx.beginPath(); ctx.roundRect(x, barY + 7, 68, 50, 9); ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.stroke();
+          ctx.fillStyle = "#ffffff"; ctx.font = "bold 10px Arial"; ctx.textAlign = "left";
+          ctx.fillText(binds[i], x + 6, barY + 17);
+          ctx.font = "20px Arial"; ctx.textAlign = "center";
+          ctx.fillText(symbols[i], x + 34, barY + 36);
+          ctx.fillStyle = "rgba(255,230,210,.78)"; ctx.font = "bold 7px Arial";
+          ctx.fillText(labels[i], x + 34, barY + 50);
+        }
+        ctx.restore();
+      }
+
+      if (saveAnimation.active) {
+        const elapsed = (performance.now() - saveAnimation.started) / 1000;
+        const progress = Math.min(1, elapsed / saveAnimation.duration);
+        if (progress >= 1) {
+          saveAnimation.active = false;
+        } else {
+          const epic = saveAnimation.epic;
+          const color = epic ? "#fff5a7" : "#54e6ff";
+          const fade = 1 - progress;
+          const radius = (epic ? 18 : 14) + progress * (epic ? 34 : 24);
+          ctx.save();
+          ctx.globalAlpha = fade * (epic ? .72 : .5);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = epic ? 3.5 : 2.5;
+          ctx.beginPath();
+          ctx.arc(saveAnimation.x, saveAnimation.y, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = fade * (epic ? .9 : .72);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = `900 ${epic ? 28 : 23}px system-ui, sans-serif`;
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgba(2,12,22,.78)";
+          ctx.strokeText(epic ? "EPIC SAVE!" : "SAVE!", saveAnimation.x, saveAnimation.y - (epic ? 34 : 29) - progress * 10);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(epic ? "EPIC SAVE!" : "SAVE!", saveAnimation.x, saveAnimation.y - (epic ? 34 : 29) - progress * 10);
+          ctx.restore();
+        }
+      }
+
+      if (goalAnimation.active) {
+        const elapsed = (performance.now() - goalAnimation.started) / 1000;
+        const progress = Math.min(1, elapsed / goalAnimation.duration);
+        if (progress >= 1) {
+          const team = goalAnimation.team;
+          const returnToMenuAfter = goalAnimation.returnToMenuAfter;
+          goalAnimation.active = false;
+          goalAnimation.team = null;
+          goalAnimation.returnToMenuAfter = false;
+          startGoalReplay(team, returnToMenuAfter);
+        } else {
+          const color = goalAnimation.team === "blue" ? "#32d7ff" : "#ff8a35";
+          const label = goalAnimation.team === "blue" ? "GOAL!" : "GOAL!";
+          const pulse = 1 + Math.sin(progress * Math.PI * 4) * .055;
+          const alpha = Math.sin(progress * Math.PI);
+
+          ctx.save();
+          ctx.globalAlpha = alpha * .9;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(goalAnimation.team === "blue" ? 905 : 55, 270, 42 + progress * 150, 0, Math.PI * 2);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 5;
+          ctx.stroke();
+          ctx.globalAlpha = alpha * .18;
+          ctx.fill();
+
+          ctx.globalAlpha = Math.min(1, alpha * 1.35);
+          ctx.translate(WORLD.w / 2, WORLD.h / 2 - 8);
+          ctx.scale(pulse, pulse);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "900 64px system-ui, sans-serif";
+          ctx.lineWidth = 8;
+          ctx.strokeStyle = "rgba(2,12,22,.85)";
+          ctx.strokeText(label, 0, 0);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      ctx.fillStyle = "rgba(3,16,27,.55)";
+      ctx.fillRect(18, 16, 138, 9);
+      ctx.fillStyle = "#32d7ff";
+      ctx.fillRect(18, 16, 138 * (player.boost / 100), 9);
+      if (gameMode.includes("2v2")) {
+        ctx.fillStyle = "rgba(3,16,27,.55)";
+        ctx.fillRect(18, 29, 138, 7);
+        ctx.fillStyle = "#66e6ff";
+        ctx.fillRect(18, 29, 138 * (teammate.boost / 100), 7);
+      }
+
+      ctx.fillStyle = "rgba(3,16,27,.55)";
+      ctx.fillRect(WORLD.w - 156, 16, 138, 9);
+      ctx.fillStyle = "#ff8a35";
+      ctx.fillRect(WORLD.w - 156, 16, 138 * (bot.boost / 100), 9);
+      if (gameMode.includes("2v2")) {
+        ctx.fillStyle = "rgba(3,16,27,.55)";
+        ctx.fillRect(WORLD.w - 156, 29, 138, 7);
+        ctx.fillStyle = "#ffb06b";
+        ctx.fillRect(WORLD.w - 156, 29, 138 * (bot2.boost / 100), 7);
+      }
+
+      if (replayActive) {
+        const remainingReplay = Math.max(0, replayDuration - (performance.now() - replayStarted));
+        ctx.save();
+        ctx.fillStyle = "rgba(2,15,27,.78)";
+        ctx.fillRect(345, 18, 270, 60);
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.font = "900 29px system-ui, sans-serif";
+        ctx.fillText("REPLAY", WORLD.w / 2, 48);
+        ctx.font = "700 14px system-ui, sans-serif";
+        ctx.fillStyle = "rgba(255,255,255,.8)";
+        ctx.fillText(`${(remainingReplay / 1000).toFixed(1)}s`, WORLD.w / 2, 69);
+        ctx.restore();
+      }
+
+      if (replayLiveState) {
+        Object.assign(player, replayLiveState.player);
+        Object.assign(teammate, replayLiveState.teammate);
+        Object.assign(bot, replayLiveState.bot);
+        Object.assign(bot2, replayLiveState.bot2);
+        Object.assign(ball, replayLiveState.ball);
+      }
+    }
+
+    function gameLoop(now) {
+      const dt = Math.min(.035, (now - lastTime) / 1000);
+      lastTime = now;
+      update(dt);
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function setKey(key, active) {
+      keys[key] = active;
+    }
+
+    const touchControls = {
+      left: "touchLeft",
+      up: "touchForward",
+      right: "touchRight"
+    };
+
+    document.querySelectorAll("[data-control]").forEach(button => {
+      const controlKey = touchControls[button.dataset.control];
+
+      const down = event => {
+        event.preventDefault();
+        setKey(controlKey, true);
+        button.classList.add("is-held");
+      };
+
+      const up = event => {
+        event.preventDefault();
+        setKey(controlKey, false);
+        button.classList.remove("is-held");
+      };
+
+      button.addEventListener("pointerdown", down);
+      ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, up));
+    });
+
+    const boostButton = document.getElementById("boostButton");
+    const driftButton = document.getElementById("driftButton");
+
+    function setDrift(active) {
+      driftActive = active;
+      driftButton.classList.toggle("is-held", active);
+    }
+
+    function setOrangeDrift(active) {
+      orangeDriftActive = active;
+    }
+
+    function setTeammateDrift(active) {
+      teammateDriftActive = active;
+    }
+
+    boostButton.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      keys.touchBoost = true;
+      boostButton.classList.add("is-held");
+    });
+
+    ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+      boostButton.addEventListener(type, () => {
+        keys.touchBoost = false;
+        boostButton.classList.remove("is-held");
+      });
+    });
+
+    driftButton.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      setDrift(true);
+    });
+
+    ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+      driftButton.addEventListener(type, () => setDrift(false));
+    });
+
+    document.querySelectorAll("[data-emote]").forEach(button => {
+      button.addEventListener("click", () => triggerEmote(button.dataset.emote));
+    });
+
+    document.addEventListener("keydown", event => {
+      const typingTarget = event.target && (
+        event.target.matches("input, textarea, select") ||
+        event.target.isContentEditable
+      );
+      if (typingTarget) return;
+
+      const code = event.code;
+      const key = event.key;
+      const isEmoteNumber = /^Digit[1-4]$/.test(code) || /^Numpad[1-4]$/.test(code) || /^[1-4]$/.test(key);
+      const teammateEmoteKeys = {
+        Digit7: "thumbs", Numpad7: "thumbs",
+        Digit8: "cry", Numpad8: "cry",
+        Digit9: "laugh", Numpad9: "laugh",
+        Digit0: "skeleton", Numpad0: "skeleton"
+      };
+
+      // T opens/closes the main player's in-field emote bar.
+      if (code === "KeyT" || key.toLowerCase() === "t") {
+        event.preventDefault();
+        toggleEmoteBar();
+        return;
+      }
+
+      // In local multiplayer, P opens the orange player's emote bar.
+      if ((gameMode === "local" || gameMode === "2v2" || gameMode === "ranked2v2") && (code === "KeyP" || key.toLowerCase() === "p")) {
+        event.preventDefault();
+        toggleTeammateEmoteBar();
+        return;
+      }
+
+      // 1-4 select the blue player's emotes.
+      if (emoteBarOpen && isEmoteNumber) {
+        event.preventDefault();
+        const n = /^[1-4]$/.test(key) ? Number(key) : Number(code.slice(-1));
+        triggerEmote(emoteTypes[n - 1]);
+        return;
+      }
+
+      // 7, 8, 9, 0 select the orange/local player's emotes.
+      if (teammateEmoteBarOpen && (gameMode === "local" || gameMode === "2v2" || gameMode === "ranked2v2") && teammateEmoteKeys[code]) {
+        event.preventDefault();
+        triggerTeammateEmote(teammateEmoteKeys[code]);
+        return;
+      }
+
+      const gameKeys = [
+        "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+        "Space", "ShiftLeft", "ShiftRight",
+        "KeyW", "KeyA", "KeyS", "KeyD",
+        "KeyL", "KeyM"
+      ];
+      if (gameKeys.includes(code)) event.preventDefault();
+
+      if (code === "ShiftLeft" || code === "ShiftRight") setDrift(true);
+      if (code === "KeyM") {
+        setOrangeDrift(true);
+        if (gameMode.includes("2v2")) setTeammateDrift(true);
+      }
+
+      keys[code] = true;
+    });
+
+    document.addEventListener("keyup", event => {
+      keys[event.code] = false;
+
+      if (event.code === "ShiftLeft" || event.code === "ShiftRight") setDrift(false);
+      if (event.code === "KeyM") {
+        setOrangeDrift(false);
+        setTeammateDrift(false);
+      }
+    });
+
+    window.addEventListener("blur", () => {
+      Object.keys(keys).forEach(key => keys[key] = false);
+      setDrift(false);
+      setOrangeDrift(false);
+      setTeammateDrift(false);
+    });
+
+    const copyrightQuiz = document.getElementById("copyrightQuiz");
+    const quizProgress = document.getElementById("quizProgress");
+    const quizQuestion = document.getElementById("quizQuestion");
+    const quizOptions = document.getElementById("quizOptions");
+    const quizAnswer = document.getElementById("quizAnswer");
+    const continueMatchButton = document.getElementById("continueMatchButton");
+
+    function showCopyrightQuiz(source = "goal") {
+      quizOpen = true;
+      quizSource = source;
+      const [question, options, correctIndex] = copyrightQuestions[quizIndex % copyrightQuestions.length];
+      quizProgress.textContent = `Question ${(quizIndex % copyrightQuestions.length) + 1} of ${copyrightQuestions.length}`;
+      quizQuestion.textContent = question;
+      quizOptions.replaceChildren();
+      quizAnswer.classList.add("hidden");
+      continueMatchButton.classList.add("hidden");
+
+      options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = option;
+        button.className = "rounded-xl border border-cyan-200/20 bg-[#17618a] px-4 py-3 text-left text-sm font-bold text-white transition hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-white";
+        button.addEventListener("click", () => {
+          [...quizOptions.children].forEach(choice => choice.disabled = true);
+          const correct = index === correctIndex;
+          button.classList.remove("bg-[#17618a]");
+          button.classList.add(correct ? "bg-emerald-600" : "bg-red-600");
+
+          if (quizSource === "boost") {
+            if (correct) {
+              player.boost = Math.min(100, player.boost + quizPadReward);
+              quizAnswer.textContent = `Correct! +${quizPadReward} energy.`;
+            } else {
+              player.boost = 0;
+              playerSlowUntil = performance.now() + 5000;
+              quizAnswer.textContent = `Not quite. The correct answer is: ${options[correctIndex]} You lost all energy and your car is slowed for 5 seconds.`;
+            }
+          } else if (quizSource === "timer") {
+            if (correct) {
+              quizAnswer.textContent = "Correct! Keep playing.";
+            } else {
+              player.boost = 0;
+              playerSlowUntil = performance.now() + 5000;
+              quizAnswer.textContent = `Not quite. The correct answer is: ${options[correctIndex]} You lost all energy and your car is slowed for 5 seconds.`;
+            }
+          } else {
+            quizAnswer.textContent = correct ? "Correct!" : `Not quite. The correct answer is: ${options[correctIndex]}`;
+          }
+
+          quizAnswer.classList.remove("hidden");
+          continueMatchButton.classList.remove("hidden");
+          continueMatchButton.focus();
+        });
+        quizOptions.appendChild(button);
+      });
+
+      copyrightQuiz.classList.remove("is-hidden");
+      quizOptions.firstElementChild.focus();
+      quizIndex++;
+    }
+
+    continueMatchButton.addEventListener("click", () => {
+      const source = quizSource;
+      quizOpen = false;
+      copyrightQuiz.classList.add("is-hidden");
+      if (source === "goal") {
+        resetPositions();
+        announce("Kickoff resumed! Drive into the ball and score in the orange goal.");
+      } else if (source === "timer") {
+        announce("Copyright challenge complete! Keep playing.");
+      } else {
+        announce("Boost orb challenge complete! Keep playing.");
+      }
+    });
+
+    document.getElementById("restartButton").addEventListener("click", restart);
+    document.getElementById("leaveMatchButton").addEventListener("click", leaveMatch);
+
+    const modeMenu = document.getElementById("modeMenu");
+    const skinPanel = document.getElementById("skinPanel");
+
+    document.getElementById("openQuestsButton").addEventListener("click", () => { renderQuestMenu(); document.getElementById("questPanel").classList.remove("is-hidden"); });
+    document.getElementById("closeQuestsButton").addEventListener("click", () => { document.getElementById("questPanel").classList.add("is-hidden"); });
+
+    document.getElementById("openSkinsButton").addEventListener("click", () => {
+      renderSkinMenu();
+      skinPanel.classList.remove("is-hidden");
+    });
+
+    document.getElementById("closeSkinsButton").addEventListener("click", () => {
+      skinPanel.classList.add("is-hidden");
+      applySelectedSkin();
+    });
+
+    function startMatch(mode) {
+      gameMode = mode;
+      if (mode === "ranked") rankedBotSkill = rankInfo[rankedRank].skill;
+      if (mode === "ranked2v2") rankedBotSkill = rankInfo[ranked2v2Rank].skill;
+      matchStarted = true;
+      gameOver = false;
+      modeMenu.classList.add("is-hidden");
+      restart();
+
+      if (mode === "local") {
+        announce("Local match started! Blue: WASD. Orange: arrow keys.");
+      } else if (mode === "2v2") {
+        announce("2v2 started! Blue: WASD + arrows. Teammate boost: L, drift: M.");
+      } else if (mode === "ranked2v2") {
+        announce(`${rankInfo[ranked2v2Rank].name} ranked 2v2! Blue team: WASD + arrows. Two ${ranked2v2Rank}-skill bots on Orange.`);
+      } else if (mode === "ranked") {
+        announce(`${rankInfo[rankedRank].name} ranked match started! Bot skill: ${rankedRank}.`);
+      } else {
+        announce("Bot match started! Drive into the ball and score.");
+      }
+    }
+
+    const rankBadge = document.getElementById("rankBadge");
+    const rankDescription = document.getElementById("rankDescription");
+    const rankedButtonTitle = document.getElementById("rankedButtonTitle");
+    const ranked2v2ButtonTitle = document.getElementById("ranked2v2ButtonTitle");
+    const rankedButtonCopy = document.getElementById("rankedButtonCopy");
+    const ranked2v2ButtonCopy = document.getElementById("ranked2v2ButtonCopy");
+    const rankInfo = {
+      bronze: { name: "Bronze", skill: 1, color: "#b87945" },
+      silver: { name: "Silver", skill: 2, color: "#bfc8d2" },
+      gold: { name: "Gold", skill: 3, color: "#f4c542" },
+      platinum: { name: "Platinum", skill: 5, color: "#65e6dc" },
+      emerald: { name: "Emerald", skill: 6, color: "#27d58a" },
+      diamond: { name: "Diamond", skill: 7, color: "#69cfff" },
+      champion: { name: "Champion", skill: 8, color: "#ffb84d" }
+    };
+
+    // Custom vector rank insignias inspired by competitive-game badge design.
+    // These are drawn shapes, not emoji, so they stay crisp on the car and in previews.
+    function drawRankInsignia(ctx, rank, x, y, scale = 1) {
+      const ri = rankInfo[rank];
+      if (!ri) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      const c = ri.color;
+      const dark = "#07121d";
+      const hi = "rgba(255,255,255,.72)";
+      ctx.fillStyle = "rgba(3,10,18,.92)";
+      ctx.beginPath(); ctx.roundRect(-14,-14,28,28,7); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.2)"; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = c; ctx.strokeStyle = dark; ctx.lineWidth = 1.2;
+
+      if (rank === "bronze" || rank === "silver" || rank === "gold") {
+        // Medal-style badges instead of chevrons.
+        ctx.beginPath(); ctx.arc(0,1,9.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.22)";
+        ctx.beginPath(); ctx.arc(-3,-3,4.5,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle = hi; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0,1,6.5,0,Math.PI*2); ctx.stroke();
+        const bars = rank === "bronze" ? 1 : rank === "silver" ? 2 : 3;
+        ctx.fillStyle = "#07121d";
+        for(let i=0;i<bars;i++){ ctx.fillRect(-5 + i*4, 4, 2, 4); }
+      } else if (rank === "platinum") {
+        ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(8,-5); ctx.lineTo(10,4); ctx.lineTo(0,10); ctx.lineTo(-10,4); ctx.lineTo(-8,-5); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = hi; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(-6,-3); ctx.lineTo(0,-6); ctx.lineTo(6,-3); ctx.lineTo(4,4); ctx.lineTo(0,7); ctx.lineTo(-4,4); ctx.closePath(); ctx.stroke();
+      } else if (rank === "emerald") {
+        ctx.beginPath(); for(let i=0;i<6;i++){ const a=-Math.PI/2+i*Math.PI/3; const px=Math.cos(a)*10, py=Math.sin(a)*10; if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);} ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = hi; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(-5,-2); ctx.lineTo(0,-6); ctx.lineTo(5,-2); ctx.lineTo(0,6); ctx.closePath(); ctx.stroke();
+      } else if (rank === "diamond") {
+        ctx.beginPath(); ctx.moveTo(0,-11); ctx.lineTo(9,-2); ctx.lineTo(0,11); ctx.lineTo(-9,-2); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = hi; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0,-11); ctx.lineTo(0,11); ctx.moveTo(-9,-2); ctx.lineTo(9,-2); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(-9,-7); ctx.lineTo(0,-11); ctx.lineTo(9,-7); ctx.lineTo(7,4); ctx.quadraticCurveTo(0,11,-7,4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#fff4b0";
+        ctx.beginPath(); ctx.arc(0,-2,3,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-5,-3,1.6,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(5,-3,1.6,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Compact badge images used beside the current rank and in skin unlock text.
+    function rankBadgeSvg(rank, size = 24) {
+      const ri = rankInfo[rank]; if (!ri) return "";
+      const c = ri.color;
+      let shape = "";
+      if (rank === "bronze" || rank === "silver" || rank === "gold") {
+        const bars = rank === "bronze" ? 1 : rank === "silver" ? 2 : 3;
+        const rects = Array.from({length:bars},(_,i)=>`<rect x="${-5+i*4}" y="4" width="2" height="4" rx="1"/>`).join("");
+        shape = `<circle cx="0" cy="1" r="9.5"/><circle cx="0" cy="1" r="6.5" fill="none" stroke="white" stroke-opacity=".72" stroke-width="1"/><circle cx="-3" cy="-3" r="4.5" fill="white" fill-opacity=".22"/>${rects}`;
+      } else if (rank === "platinum") {
+        shape = `<path d="M0-10 8-5 10 4 0 10-10 4-8-5Z"/><path d="M-6-3 0-6 6-3 4 4 0 7-4 4Z" fill="none" stroke="white" stroke-opacity=".72"/>`;
+      } else if (rank === "emerald") {
+        shape = `<path d="M0-10 9-5 9 5 0 10-9 5-9-5Z"/><path d="M-5-2 0-6 5-2 0 6Z" fill="none" stroke="white" stroke-opacity=".72"/>`;
+      } else if (rank === "diamond") {
+        shape = `<path d="M0-11 9-2 0 11-9-2Z"/><path d="M0-11V11M-9-2H9" fill="none" stroke="white" stroke-opacity=".72"/>`;
+      } else {
+        shape = `<path d="M-9-7 0-11 9-7 7 4Q0 11-7 4Z"/><circle cx="0" cy="-2" r="3" fill="#fff4b0"/><circle cx="-5" cy="-3" r="1.6" fill="#fff4b0"/><circle cx="5" cy="-3" r="1.6" fill="#fff4b0"/>`;
+      }
+      const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="-15 -15 30 30" aria-hidden="true"><rect x="-14" y="-14" width="28" height="28" rx="7" fill="#030a12" fill-opacity=".92" stroke="white" stroke-opacity=".2"/><g fill="${c}" stroke="#07121d" stroke-width="1.2" stroke-linejoin="round">${shape}</g></svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    const rankOrder = ["bronze", "silver", "gold", "platinum", "emerald", "diamond", "champion"];
+
+    const SKIN_SAVE_KEY = "rocketCarSoccerSelectedSkin";
+    const SKIN_UNLOCK_KEY = "rocketCarSoccerSkinUnlocks";
+    const skins = [
+      { id: "ocean", name: "Ocean", color: "#32d7ff", unlock: "free" },
+      { id: "lime", name: "Lime", color: "#63f56b", unlock: "free" },
+      { id: "purple", name: "Purple", color: "#b36cff", unlock: "free" },
+      { id: "crimson", name: "Crimson", color: "#ff4f64", unlock: "free" },
+      { id: "gold", name: "Gold", color: "#ffd34e", unlock: "gold" },
+      { id: "emerald", name: "Emerald", color: "#20d99a", unlock: "emerald" },
+      { id: "diamond", name: "Diamond", color: "#8de8ff", unlock: "diamond" },
+      { id: "champion", name: "Champion", color: "#ff75d1", unlock: "champion" },
+      { id: "goalgetter", name: "Goal Getter", color: "#ff5c8a", unlock: "quest" },
+      { id: "machine", name: "Goal Machine", color: "#ffb347", unlock: "quest" },
+      { id: "winner", name: "Winner", color: "#54e6ff", unlock: "quest" },
+      { id: "mindset", name: "Champion Mindset", color: "#c084fc", unlock: "quest" },
+      { id: "goldquest", name: "Golden Flame", color: "#ffd34e", unlock: "quest" },
+      { id: "diamondquest", name: "Diamond Pulse", color: "#8de8ff", unlock: "quest" },
+      { id: "championquest", name: "Champion Fire", color: "#ff75d1", unlock: "quest" },
+      { id: "savespark", name: "Save Spark", color: "#54e6ff", unlock: "quest" },
+      { id: "savewall", name: "Save Wall", color: "#7cf7ff", unlock: "quest" },
+      { id: "epicshield", name: "Epic Shield", color: "#fff5a7", unlock: "quest" },
+      { id: "savesupreme", name: "Save Supreme", color: "#ff9cf0", unlock: "quest" },
+      { id: "jester", name: "Jester Hat", color: "#c084fc", unlock: "quest" },
+      { id: "crown", name: "Crown", color: "#ffd700", unlock: "quest" }
+    ];
+    let selectedSkin = "ocean";
+    let unlockedSkins = skins.map(skin => skin.id);
+    const QUEST_SAVE_KEY = "rocketCarSoccerQuestProgress";
+    // Quest progress is persistent. Do not wipe older saves just because the game code changes.
+    const QUEST_DATA_VERSION = 6;
+    const questDefinitions = [
+      { id:"saves5", name:"Save Spark", desc:"Make 5 saves", type:"saves", target:5, reward:"savespark", rewardName:"Save Spark", rewardColor:"#54e6ff" },
+      { id:"saves25", name:"Save Wall", desc:"Make 25 saves", type:"saves", target:25, reward:"savewall", rewardName:"Save Wall", rewardColor:"#7cf7ff" },
+      { id:"epic3", name:"Epic Defender", desc:"Make 3 epic saves", type:"epicSaves", target:3, reward:"epicshield", rewardName:"Epic Shield", rewardColor:"#fff5a7" },
+      { id:"epic15", name:"Impossible to Score", desc:"Make 15 epic saves", type:"epicSaves", target:15, reward:"savesupreme", rewardName:"Save Supreme", rewardColor:"#ff9cf0" },
+      { id:"goals5", name:"Goal Getter", desc:"Score 5 goals", type:"goals", target:5, reward:"goalgetter", rewardName:"Goal Getter", rewardColor:"#ff5c8a" },
+      { id:"goals25", name:"Goal Machine", desc:"Score 25 goals", type:"goals", target:25, reward:"machine", rewardName:"Goal Machine", rewardColor:"#ffb347" },
+      { id:"wins5", name:"Winner", desc:"Win 5 matches", type:"wins", target:5, reward:"winner", rewardName:"Winner", rewardColor:"#54e6ff" },
+      { id:"wins15", name:"Champion Mindset", desc:"Win 15 matches", type:"wins", target:15, reward:"mindset", rewardName:"Champion Mindset", rewardColor:"#c084fc" },
+      { id:"rankGold", name:"Reach Gold", desc:"Reach Gold rank in either ranked mode", type:"rank", target:2, reward:"goldquest", rewardName:"Golden Flame", rewardColor:"#ffd34e" },
+      { id:"rankDiamond", name:"Reach Diamond", desc:"Reach Diamond rank in either ranked mode", type:"rank", target:5, reward:"diamondquest", rewardName:"Diamond Pulse", rewardColor:"#8de8ff" },
+      { id:"rankChampion", name:"Reach Champion", desc:"Reach Champion rank in either ranked mode", type:"rank", target:6, reward:"championquest", rewardName:"Champion Fire", rewardColor:"#ff75d1" },
+      { id:"kingOfAllTrades", name:"King of All Trades", desc:"Complete every other quest", type:"all", target:12, reward:"crown", rewardName:"Crown", rewardColor:"#ffd700" },
+      { id:"jackOfAllTrades", name:"Jack of All Trades", desc:"Complete the easier quest from each quest pair: 5 saves, 3 epic saves, 5 goals, and 5 wins", type:"jack", target:4, reward:"jester", rewardName:"Jester Hat", rewardColor:"#c084fc" }
+    ];
+    const questRewards = {
+      goalgetter:"#ff5c8a", machine:"#ffb347", winner:"#54e6ff", mindset:"#c084fc", goldquest:"#ffd34e", diamondquest:"#8de8ff", championquest:"#ff75d1"
+    };
+    let questProgress = { goals:0, wins:0, saves:0, epicSaves:0, completed:[], version:QUEST_DATA_VERSION };
+    if (accountSessionActive) try {
+      const saved=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)||"null");
+      if(saved && typeof saved === "object") {
+        // Keep existing quest progress across game updates instead of resetting it.
+        questProgress.goals = Math.max(0, Number(saved.goals) || 0);
+        questProgress.wins = Math.max(0, Number(saved.wins) || 0);
+        questProgress.saves = Math.max(0, Number(saved.saves) || 0);
+        questProgress.epicSaves = Math.max(0, Number(saved.epicSaves) || 0);
+        questProgress.completed = Array.isArray(saved.completed)
+          ? [...new Set(saved.completed.filter(id => questDefinitions.some(q => q.id === id)))]
+          : [];
+        questProgress.version = QUEST_DATA_VERSION;
+      }
+      saveQuestProgress();
+    } catch(e) {}
+    function persistAccountState(){
+      if(!accountSessionActive || !currentAccountUsername) return false;
+      try{
+        const store = getAccountStore();
+        if(!store[currentAccountUsername]) return false;
+        store[currentAccountUsername].state = collectAccountState();
+        const saved = setAccountStore(store);
+        if(saved) return true;
+      }catch(e){}
+      return false;
+    }
+    function saveQuestProgress(){
+      if(!accountSessionActive) return;
+      try{
+        questProgress.version=QUEST_DATA_VERSION;
+        localStorage.setItem(QUEST_SAVE_KEY,JSON.stringify(questProgress));
+      }catch(e){}
+      persistAccountState();
+    }
+    function highestRankIndex(){ return Math.max(rankOrder.indexOf(rankedRank),rankOrder.indexOf(ranked2v2Rank)); }
+    function questValue(q){ if(q.type==="goals") return questProgress.goals; if(q.type==="wins") return questProgress.wins; if(q.type==="saves") return questProgress.saves; if(q.type==="epicSaves") return questProgress.epicSaves; if(q.type==="all") return questDefinitions.filter(other => other.id !== q.id && questProgress.completed.includes(other.id)).length; if(q.type==="jack") return ["saves5","epic3","goals5","wins5"].filter(id=>questProgress.completed.includes(id)).length; return highestRankIndex(); }
+    function refreshQuestCompletion(){
+      questDefinitions.forEach(q=>{ if(questValue(q)>=q.target && !questProgress.completed.includes(q.id)){ questProgress.completed.push(q.id); if(q.reward !== "crown" && q.reward !== "jester" && !unlockedSkins.includes(q.reward)){unlockedSkins.push(q.reward);} } });
+      const highest = highestRankIndex();
+      // Crown and Jester Hat require BOTH the rank and the matching quest.
+      if (highest >= rankOrder.indexOf("platinum") && questProgress.completed.includes("jackOfAllTrades") && !unlockedSkins.includes("jester")) unlockedSkins.push("jester");
+      if (highest >= rankOrder.indexOf("champion") && questProgress.completed.includes("kingOfAllTrades") && !unlockedSkins.includes("crown")) unlockedSkins.push("crown");
+      // Remove these special skins if an old save unlocked them from rank alone.
+      if (!(highest >= rankOrder.indexOf("platinum") && questProgress.completed.includes("jackOfAllTrades"))) unlockedSkins = unlockedSkins.filter(id => id !== "jester");
+      if (!(highest >= rankOrder.indexOf("champion") && questProgress.completed.includes("kingOfAllTrades"))) unlockedSkins = unlockedSkins.filter(id => id !== "crown");
+      saveQuestProgress();
+      if(accountSessionActive) try{localStorage.setItem(SKIN_UNLOCK_KEY,JSON.stringify(unlockedSkins));}catch(e){}
+    }
+    function renderQuestMenu(){
+      refreshQuestCompletion();
+      const grid=document.getElementById("questGrid"), stats=document.getElementById("questStats");
+      stats.innerHTML=`Goals: <strong>${questProgress.goals}</strong> · Saves: <strong>${questProgress.saves}</strong> · Epic saves: <strong>${questProgress.epicSaves}</strong> · Wins: <strong>${questProgress.wins}</strong> · Highest rank: <strong>${rankInfo[rankOrder[highestRankIndex()]].name}</strong>`;
+      grid.replaceChildren();
+      questDefinitions.forEach(q=>{ const value=Math.min(q.target,questValue(q)), done=questProgress.completed.includes(q.id); const item=document.createElement("div"); item.className=`quest-item rounded-2xl bg-white/5 p-4 ${done?"complete":""}`; item.innerHTML=`<div class="flex items-center gap-4"><span class="quest-reward shrink-0" style="background:${q.rewardColor}"></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between gap-3"><strong class="text-white">${q.name}</strong><span class="text-xs font-extrabold ${done?"text-emerald-300":"text-blue-100/70"}">${done?"✓ COMPLETE":`${value}/${q.target}`}</span></div><p class="mt-1 text-xs text-blue-100/70">${q.desc}</p><div class="mt-3 h-2 overflow-hidden rounded-full bg-black/30"><div class="h-full rounded-full bg-emerald-400" style="width:${(value/q.target)*100}%"></div></div><p class="mt-2 text-[11px] font-bold text-purple-200">Reward: ${q.rewardName} skin</p></div></div>`; grid.appendChild(item); });
+    }
+
+    if (accountSessionActive) try {
+      const savedSkin = localStorage.getItem(SKIN_SAVE_KEY);
+      const savedUnlocks = JSON.parse(localStorage.getItem(SKIN_UNLOCK_KEY) || "null");
+      if (skins.some(skin => skin.id === savedSkin)) selectedSkin = savedSkin;
+      if (Array.isArray(savedUnlocks)) unlockedSkins = [...new Set([...unlockedSkins, ...savedUnlocks])];
+      // Build unlocks from the actual account state: free skins, reached rank skins, and completed quest rewards.
+      unlockedSkins = skins.filter(skin => skin.unlock === "free").map(skin => skin.id);
+      const highest = highestRankIndex();
+      skins.forEach(skin => {
+        if (skin.unlock !== "free" && skin.unlock !== "quest" && rankOrder.indexOf(skin.unlock) >= 0 && highest >= rankOrder.indexOf(skin.unlock)) {
+          if (!unlockedSkins.includes(skin.id)) unlockedSkins.push(skin.id);
+        }
+      });
+      questDefinitions.forEach(q => {
+        if (questProgress.completed.includes(q.id) && q.reward !== "crown" && q.reward !== "jester" && !unlockedSkins.includes(q.reward)) unlockedSkins.push(q.reward);
+      });
+      if (highest >= rankOrder.indexOf("platinum") && questProgress.completed.includes("jackOfAllTrades")) unlockedSkins.push("jester");
+      if (highest >= rankOrder.indexOf("champion") && questProgress.completed.includes("kingOfAllTrades")) unlockedSkins.push("crown");
+      if (!(highest >= rankOrder.indexOf("platinum") && questProgress.completed.includes("jackOfAllTrades"))) unlockedSkins = unlockedSkins.filter(id => id !== "jester");
+      if (!(highest >= rankOrder.indexOf("champion") && questProgress.completed.includes("kingOfAllTrades"))) unlockedSkins = unlockedSkins.filter(id => id !== "crown");
+      unlockedSkins = [...new Set(unlockedSkins)];
+      if (selectedSkin === "crown" && !unlockedSkins.includes("crown")) selectedSkin = "ocean";
+      if (selectedSkin === "jester" && !unlockedSkins.includes("jester")) selectedSkin = "ocean";
+      localStorage.setItem(SKIN_UNLOCK_KEY, JSON.stringify(unlockedSkins));
+    } catch (e) {}
+
+    function unlockSkinsForRank(rank) {
+      // Unlock only free skins, reached-rank skins, and genuinely completed quest rewards.
+      const highest = Math.max(rankOrder.indexOf(rank), highestRankIndex());
+      unlockedSkins = skins.filter(skin => skin.unlock === "free").map(skin => skin.id);
+      skins.forEach(skin => {
+        if (skin.unlock !== "free" && skin.unlock !== "quest" && rankOrder.indexOf(skin.unlock) >= 0 && highest >= rankOrder.indexOf(skin.unlock)) {
+          if (!unlockedSkins.includes(skin.id)) unlockedSkins.push(skin.id);
+        }
+      });
+      questDefinitions.forEach(q => {
+        if (questProgress.completed.includes(q.id) && q.reward !== "crown" && q.reward !== "jester" && !unlockedSkins.includes(q.reward)) unlockedSkins.push(q.reward);
+      });
+      if (highest >= rankOrder.indexOf("platinum") && questProgress.completed.includes("jackOfAllTrades")) unlockedSkins.push("jester");
+      if (highest >= rankOrder.indexOf("champion") && questProgress.completed.includes("kingOfAllTrades")) unlockedSkins.push("crown");
+      if (!(highest >= rankOrder.indexOf("platinum") && questProgress.completed.includes("jackOfAllTrades"))) unlockedSkins = unlockedSkins.filter(id => id !== "jester");
+      if (!(highest >= rankOrder.indexOf("champion") && questProgress.completed.includes("kingOfAllTrades"))) unlockedSkins = unlockedSkins.filter(id => id !== "crown");
+      unlockedSkins = [...new Set(unlockedSkins)];
+      if (selectedSkin === "crown" && !unlockedSkins.includes("crown")) selectedSkin = "ocean";
+      if (selectedSkin === "jester" && !unlockedSkins.includes("jester")) selectedSkin = "ocean";
+      if (!accountSessionActive) return;
+      try {
+        localStorage.setItem(SKIN_UNLOCK_KEY, JSON.stringify(unlockedSkins));
+      } catch (e) {}
+    }
+
+    function applySelectedSkin() {
+      const skin = skins.find(item => item.id === selectedSkin) || skins[0];
+      player.color = skin.color;
+    }
+
+    function saveSelectedSkin() {
+      if (!accountSessionActive) return;
+      try { localStorage.setItem(SKIN_SAVE_KEY, selectedSkin); } catch (e) {}
+      persistAccountState();
+    }
+
+    function getAccountStore() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(ACCOUNT_STORE_KEY) || "{}");
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (e) { return {}; }
+    }
+
+    function setAccountStore(store) {
+      try { localStorage.setItem(ACCOUNT_STORE_KEY, JSON.stringify(store)); return true; } catch (e) { return false; }
+    }
+
+    async function hashAccountPassword(password) {
+      const text = String(password);
+      if (window.crypto && crypto.subtle) {
+        const data = new TextEncoder().encode(text);
+        const digest = await crypto.subtle.digest("SHA-256", data);
+        return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2,"0")).join("");
+      }
+      // Fallback for browsers that do not expose Web Crypto on local files.
+      let h = 2166136261;
+      for (let i=0;i<text.length;i++) { h ^= text.charCodeAt(i); h = Math.imul(h,16777619); }
+      return "fallback-" + (h >>> 0).toString(16);
+    }
+
+    function normalizeUsername(value) {
+      return String(value || "").trim();
+    }
+
+    function isValidUsername(username) {
+      return /^[A-Za-z0-9_]{3,20}$/.test(username);
+    }
+
+    function collectAccountState() {
+      return {
+        version: 1,
+        rankedRank,
+        ranked2v2Rank,
+        questProgress: JSON.parse(JSON.stringify(questProgress)),
+        unlockedSkins: [...new Set(unlockedSkins)],
+        selectedSkin
+      };
+    }
+
+    function saveAccountState() {
+      persistAccountState();
+    }
+
+    function loadAccountState(username) {
+      const store = getAccountStore();
+      const account = store[username];
+      if (!account || !account.state) return false;
+      const state = account.state;
+      rankedRank = rankOrder.includes(state.rankedRank) ? state.rankedRank : "bronze";
+      ranked2v2Rank = rankOrder.includes(state.ranked2v2Rank) ? state.ranked2v2Rank : "bronze";
+      const qp = state.questProgress || {};
+      questProgress = {
+        goals: Math.max(0, Number(qp.goals) || 0),
+        wins: Math.max(0, Number(qp.wins) || 0),
+        saves: Math.max(0, Number(qp.saves) || 0),
+        epicSaves: Math.max(0, Number(qp.epicSaves) || 0),
+        completed: Array.isArray(qp.completed) ? [...new Set(qp.completed.filter(id => questDefinitions.some(q => q.id === id)))] : [],
+        version: QUEST_DATA_VERSION
+      };
+      unlockedSkins = Array.isArray(state.unlockedSkins) ? [...new Set(state.unlockedSkins.filter(id => skins.some(s => s.id === id)))] : skins.filter(s => s.unlock === "free").map(s => s.id);
+      const freeSkins = skins.filter(s => s.unlock === "free").map(s => s.id);
+      unlockedSkins = [...new Set([...freeSkins, ...unlockedSkins])];
+      selectedSkin = skins.some(s => s.id === state.selectedSkin) ? state.selectedSkin : "ocean";
+      refreshQuestCompletion();
+      unlockSkinsForRank(rankedRank);
+      unlockSkinsForRank(ranked2v2Rank);
+      if (!unlockedSkins.includes(selectedSkin)) selectedSkin = "ocean";
+      applySelectedSkin();
+      updateRankDisplay();
+      renderQuestMenu();
+      renderSkinMenu();
+      persistAccountState();
+      return true;
+    }
+
+    function setAccountStatus(message, good=false) {
+      const el = document.getElementById("accountStatus");
+      el.textContent = message;
+      el.className = `account-status text-center text-xs font-bold ${good ? "text-emerald-300" : "text-orange-300"}`;
+    }
+
+    function openAccountGate() {
+      document.getElementById("accountGate").classList.remove("is-hidden");
+      document.getElementById("modeMenu").classList.add("is-hidden");
+      document.getElementById("accountUsername").focus();
+    }
+
+    function closeAccountGate() {
+      document.getElementById("accountGate").classList.add("is-hidden");
+      document.getElementById("modeMenu").classList.remove("is-hidden");
+    }
+
+    async function createAccount() {
+      const username = normalizeUsername(document.getElementById("accountUsername").value);
+      const password = document.getElementById("accountPassword").value;
+      if (!isValidUsername(username)) { setAccountStatus("Username must be 3–20 characters using letters, numbers, or _. "); return; }
+      if (password.length < 4) { setAccountStatus("Password must be at least 4 characters."); return; }
+      const store = getAccountStore();
+      if (store[username]) { setAccountStatus("That username is already taken on this browser."); return; }
+      const passwordHash = await hashAccountPassword(password);
+      store[username] = { passwordHash, state: {
+        version: 1, rankedRank: "bronze", ranked2v2Rank: "bronze",
+        questProgress: { goals:0, wins:0, saves:0, epicSaves:0, completed:[], version:QUEST_DATA_VERSION },
+        unlockedSkins: skins.filter(s => s.unlock === "free").map(s => s.id), selectedSkin: "ocean"
+      }};
+      if (!setAccountStore(store)) { setAccountStatus("Could not save the account in this browser."); return; }
+      currentAccountUsername = username;
+      accountSessionActive = true;
+      loadAccountState(username);
+      updateAccountUI();
+      closeAccountGate();
+      setAccountStatus("");
+      announce(`Welcome, ${username}! Your progress will save to this account.`);
+    }
+
+    async function loginAccount() {
+      const username = normalizeUsername(document.getElementById("accountUsername").value);
+      const password = document.getElementById("accountPassword").value;
+      const store = getAccountStore();
+      if (!store[username]) { setAccountStatus("Account not found. Create the account first."); return; }
+      const passwordHash = await hashAccountPassword(password);
+      if (passwordHash !== store[username].passwordHash) { setAccountStatus("Incorrect password."); return; }
+      currentAccountUsername = username;
+      accountSessionActive = true;
+      loadAccountState(username);
+      updateAccountUI();
+      closeAccountGate();
+      document.getElementById("accountPassword").value = "";
+      setAccountStatus("");
+      announce(`Welcome back, ${username}!`);
+    }
+
+    function updateAccountUI() {
+      const label = document.getElementById("loggedInAs");
+      const accountButton = document.getElementById("accountButton");
+      const logoutButton = document.getElementById("logoutAccountButton");
+      if (accountSessionActive && currentAccountUsername) {
+        label.textContent = `Logged in as ${currentAccountUsername}`;
+        accountButton.textContent = "Account";
+        logoutButton.classList.remove("hidden");
+      } else {
+        label.textContent = "Playing as Guest";
+        accountButton.textContent = "Account / Log In";
+        logoutButton.classList.add("hidden");
+      }
+    }
+
+    function continueAsGuest() {
+      try { localStorage.removeItem(ACCOUNT_SESSION_KEY); } catch (e) {}
+      accountSessionActive = false;
+      currentAccountUsername = null;
+      closeAccountGate();
+      updateAccountUI();
+      setAccountStatus("");
+    }
+
+    function logoutAccount() {
+      if (!accountSessionActive) return;
+      saveAccountState();
+      try { localStorage.removeItem(ACCOUNT_SESSION_KEY); } catch (e) {}
+      accountSessionActive = false;
+      currentAccountUsername = null;
+      rankedRank = "bronze";
+      ranked2v2Rank = "bronze";
+      questProgress = { goals:0, wins:0, saves:0, epicSaves:0, completed:[], version:QUEST_DATA_VERSION };
+      unlockedSkins = skins.filter(s => s.unlock === "free").map(s => s.id);
+      selectedSkin = "ocean";
+      applySelectedSkin();
+      updateRankDisplay();
+      updateAccountUI();
+      closeAccountGate();
+      announce("Logged out. Guest progress will not be saved.");
+    }
+
+    document.getElementById("accountButton").addEventListener("click", openAccountGate);
+    document.getElementById("continueGuestButton").addEventListener("click", continueAsGuest);
+    document.getElementById("createAccountButton").addEventListener("click", createAccount);
+    document.getElementById("loginAccountButton").addEventListener("click", loginAccount);
+    document.getElementById("logoutAccountButton").addEventListener("click", logoutAccount);
+    document.getElementById("accountPassword").addEventListener("keydown", e => { if (e.key === "Enter") loginAccount(); });
+
+    function drawSkinPreview(ctx, skin) {
+      const w = 180, h = 112;
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(w / 2, 64);
+
+      // Small platform/shadow so the preview reads like a real car.
+      ctx.fillStyle = "rgba(0,0,0,.28)";
+      ctx.beginPath();
+      ctx.ellipse(0, 18, 42, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const teamBorder = "#32d7ff";
+      ctx.fillStyle = teamBorder;
+      ctx.beginPath(); ctx.roundRect(-29, -20, 58, 40, 11); ctx.fill();
+      ctx.fillStyle = "#03121e";
+      ctx.beginPath(); ctx.roundRect(-26, -17, 52, 34, 9); ctx.fill();
+      ctx.fillStyle = skin.color || "#32d7ff";
+      ctx.beginPath(); ctx.roundRect(-21, -14, 42, 28, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.48)";
+      ctx.beginPath(); ctx.roundRect(3, -11, 13, 22, 4); ctx.fill();
+      ctx.fillStyle = "#071923";
+      ctx.fillRect(-24, -18, 10, 5); ctx.fillRect(-24, 13, 10, 5);
+      ctx.fillRect(14, -18, 10, 5); ctx.fillRect(14, 13, 10, 5);
+
+      // Rank skin preview badge.
+      if (rankInfo[skin.unlock]) {
+        const ri = rankInfo[skin.unlock];
+        ctx.save();
+        ctx.translate(0, -27);
+        drawRankInsignia(ctx, skin.unlock, 0, 0, 0.95);
+        ctx.restore();
+      }
+
+      if (skin.id === "jester") {
+        ctx.save(); ctx.translate(0, -18);
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath(); ctx.roundRect(-22, -2, 44, 8, 4); ctx.fill();
+        ctx.fillStyle = "#7c3aed";
+        ctx.beginPath(); ctx.roundRect(-17, -13, 34, 12, 5); ctx.fill();
+        ctx.fillStyle = "#f43f5e";
+        ctx.beginPath(); ctx.moveTo(-14,-10); ctx.quadraticCurveTo(-24,-25,-13,-32); ctx.quadraticCurveTo(-7,-21,-3,-10); ctx.fill();
+        ctx.fillStyle = "#22c55e";
+        ctx.beginPath(); ctx.moveTo(-5,-10); ctx.quadraticCurveTo(0,-29,6,-35); ctx.quadraticCurveTo(11,-25,9,-10); ctx.fill();
+        ctx.fillStyle = "#7c3aed";
+        ctx.beginPath(); ctx.moveTo(8,-10); ctx.quadraticCurveTo(20,-25,28,-23); ctx.quadraticCurveTo(29,-10,15,-7); ctx.fill();
+        ctx.fillStyle = "#ffd34e";
+        [[-13,-32],[6,-35],[28,-23]].forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fill(); });
+        ctx.restore();
+      }
+
+      if (skin.id === "crown") {
+        ctx.save(); ctx.translate(0, -19);
+        ctx.fillStyle = "#ffd700"; ctx.strokeStyle = "#9a6b00"; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-21,4); ctx.lineTo(-18,-14); ctx.lineTo(-8,-6); ctx.lineTo(0,-17);
+        ctx.lineTo(8,-6); ctx.lineTo(18,-14); ctx.lineTo(21,4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#ffea70";
+        ctx.beginPath(); ctx.roundRect(-22,2,44,8,3); ctx.fill(); ctx.stroke();
+        ctx.fillStyle="#ef4444"; ctx.beginPath(); ctx.arc(-9,5,2.3,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#38bdf8"; ctx.beginPath(); ctx.arc(0,5,2.3,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#a855f7"; ctx.beginPath(); ctx.arc(9,5,2.3,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function renderSkinMenu() {
+      const grid = document.getElementById("skinGrid");
+      const status = document.getElementById("skinUnlockStatus");
+      if (!grid || !status) return;
+      refreshQuestCompletion();
+      unlockSkinsForRank(rankedRank);
+      unlockSkinsForRank(ranked2v2Rank);
+      if (!unlockedSkins.includes(selectedSkin)) selectedSkin = "ocean";
+      applySelectedSkin();
+      saveSelectedSkin();
+      const current1 = rankInfo[rankedRank];
+      const current2 = rankInfo[ranked2v2Rank];
+      status.innerHTML = `Your ranks: <strong class="inline-flex items-center gap-1"><img src="${rankBadgeSvg(rankedRank,22)}" width="22" height="22">${current1.name}</strong> 1v1 · <strong class="inline-flex items-center gap-1"><img src="${rankBadgeSvg(ranked2v2Rank,22)}" width="22" height="22">${current2.name}</strong> 2v2. Rank skins unlock permanently when you reach the required rank.`;
+      grid.replaceChildren();
+      skins.forEach(skin => {
+        const unlocked = unlockedSkins.includes(skin.id);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `skin-choice rounded-2xl bg-white/5 p-4 text-left ${selectedSkin === skin.id ? "selected" : ""}`;
+        button.disabled = !unlocked;
+        const unlockText = skin.unlock === "free" ? "FREE" : skin.unlock === "quest" ? "Quest Reward" : `<img src="${rankBadgeSvg(skin.unlock,18)}" width="18" height="18" class="inline-block align-middle mr-1">Unlock at ${rankInfo[skin.unlock].name}`;
+
+        const preview = document.createElement("canvas");
+        preview.width = 180; preview.height = 112;
+        preview.className = "w-full rounded-xl border border-white/10 bg-black/20";
+        drawSkinPreview(preview.getContext("2d"), skin);
+
+        const info = document.createElement("div");
+        info.className = "mt-3";
+        const title = document.createElement("strong");
+        title.className = "block text-white";
+        title.textContent = skin.name;
+        const sub = document.createElement("span");
+        sub.className = "mt-1 block text-xs text-blue-100/70";
+        const isRankSkin = skin.unlock !== "free" && skin.unlock !== "quest";
+        if (!isRankSkin) {
+          sub.textContent = unlocked ? (selectedSkin === skin.id ? "EQUIPPED" : unlockText) : "🔒 " + unlockText;
+          info.append(title, sub);
+        } else {
+          info.append(title);
+        }
+        button.replaceChildren(preview, info);
+
+        if (unlocked) {
+          button.addEventListener("click", () => {
+            selectedSkin = skin.id;
+            applySelectedSkin();
+            saveSelectedSkin();
+            renderSkinMenu();
+          });
+        }
+        grid.appendChild(button);
+      });
+    }
+
+    // 1v1 and 2v2 have completely separate ranked ladders.
+    // Existing saved rank is kept as the 1v1 rank; 2v2 starts at Bronze.
+    if (accountSessionActive) try {
+      const saved1v1 = localStorage.getItem(RANK_SAVE_KEY);
+      const saved2v2 = localStorage.getItem(RANK_2V2_SAVE_KEY);
+      if (rankOrder.includes(saved1v1)) rankedRank = saved1v1;
+      if (rankOrder.includes(saved2v2)) ranked2v2Rank = saved2v2;
+    } catch (e) {
+      // localStorage may be unavailable in some browser privacy modes.
+    }
+
+    function saveRank(mode = gameMode) {
+      if (!accountSessionActive) return;
+      try {
+        if (mode === "ranked2v2") localStorage.setItem(RANK_2V2_SAVE_KEY, ranked2v2Rank);
+        else localStorage.setItem(RANK_SAVE_KEY, rankedRank);
+      } catch (e) {
+        // Keep playing even if browser storage is unavailable.
+      }
+      persistAccountState();
+    }
+
+    function getActiveRank(mode = gameMode) {
+      return mode === "ranked2v2" ? ranked2v2Rank : rankedRank;
+    }
+
+    function updateRankDisplay() {
+      const info1v1 = rankInfo[rankedRank];
+      const info2v2 = rankInfo[ranked2v2Rank];
+      rankedBotSkill = info1v1.skill;
+      rankBadge.innerHTML = `<span class="inline-flex items-center gap-1"><img src="${rankBadgeSvg(rankedRank,24)}" width="24" height="24">1v1: ${info1v1.name}</span><br><span class="inline-flex items-center gap-1"><img src="${rankBadgeSvg(ranked2v2Rank,24)}" width="24" height="24">2v2: ${info2v2.name}</span>`;
+      rankDescription.innerHTML = `1v1 Rank: <strong>${info1v1.name}</strong> · 2v2 Rank: <strong>${info2v2.name}</strong><br><span class="text-xs">Each mode has its own separate rank and progression.</span>`;
+      rankedButtonTitle.textContent = `Play Ranked 1v1: ${info1v1.name}`;
+      ranked2v2ButtonTitle.textContent = `Play Ranked 2v2: ${info2v2.name}`;
+      rankedButtonCopy.textContent = `Play 1v1 against a ${info1v1.name}-skill bot.`;
+      ranked2v2ButtonCopy.textContent = `You + a teammate vs two ${info2v2.name}-skill bots.`;
+      unlockSkinsForRank(rankedRank);
+      unlockSkinsForRank(ranked2v2Rank);
+      applySelectedSkin();
+    }
+
+    function changeRank(won, mode = gameMode) {
+      if (won) questProgress.wins++;
+      refreshQuestCompletion();
+      saveQuestProgress();
+      const is2v2 = mode === "ranked2v2";
+      const currentRank = getActiveRank(mode);
+      const currentIndex = rankOrder.indexOf(currentRank);
+      const nextIndex = won
+        ? Math.min(rankOrder.length - 1, currentIndex + 1)
+        : Math.max(0, currentIndex - 1);
+      const oldRank = rankInfo[currentRank].name;
+      const newRankKey = rankOrder[nextIndex];
+      if (is2v2) ranked2v2Rank = newRankKey;
+      else rankedRank = newRankKey;
+      saveRank(mode);
+      updateRankDisplay();
+      refreshQuestCompletion();
+      const newRank = rankInfo[newRankKey].name;
+      const modeLabel = is2v2 ? " Ranked 2v2" : " Ranked 1v1";
+      if (newRank === oldRank) {
+        announce(won ? `${newRank}${modeLabel} — you won! You are already at the top rank.` : `${newRank}${modeLabel} — you lost, but Bronze is the lowest rank.`);
+      } else {
+        announce(won ? `${modeLabel} win! ${oldRank} → ${newRank}.` : `${modeLabel} loss! ${oldRank} → ${newRank}.`);
+      }
+    }
+
+    updateRankDisplay();
+
+    document.getElementById("botMatchButton").addEventListener("click", () => startMatch("bot"));
+    document.getElementById("localMatchButton").addEventListener("click", () => startMatch("local"));
+    document.getElementById("twoVTwoCasualButton").addEventListener("click", () => startMatch("2v2"));
+    document.getElementById("rankedMatchButton").addEventListener("click", () => startMatch("ranked"));
+    document.getElementById("ranked2v2MatchButton").addEventListener("click", () => startMatch("ranked2v2"));
+
+    window.addEventListener("resize", resizeCanvas);
+    // Save on exit, but DO NOT clear the remembered session. Clearing it here
+    // was the reason accounts appeared to disappear after refreshing/reopening.
+    window.addEventListener("beforeunload", () => {
+      saveAccountState();
+    });
+    window.addEventListener("pagehide", () => {
+      saveAccountState();
+    });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveAccountState(); });
+    setInterval(saveAccountState, 1000);
+
+    // Accounts are remembered on this browser. If a previous account session exists, restore it automatically.
+    document.getElementById("accountGate").classList.add("is-hidden");
+    document.getElementById("modeMenu").classList.remove("is-hidden");
+    let restoredAccount = false;
+    try {
+      const rememberedUsername = normalizeUsername(localStorage.getItem(ACCOUNT_SESSION_KEY) || "");
+      if (rememberedUsername && getAccountStore()[rememberedUsername]) {
+        currentAccountUsername = rememberedUsername;
+        accountSessionActive = true;
+        restoredAccount = loadAccountState(rememberedUsername);
+      } else if (rememberedUsername) {
+        localStorage.removeItem(ACCOUNT_SESSION_KEY);
+      }
+    } catch (e) {}
+    updateAccountUI();
+    if (restoredAccount) {
+      announce(`Welcome back, ${currentAccountUsername}! Your account was remembered.`);
+      // Ask supported browsers to keep this site's storage persistent. This is
+      // best-effort and does not affect gameplay if the browser declines.
+      try {
+        if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+      } catch (e) {}
+    }
+    resizeCanvas();
+    updateHud();
+    lucide.createIcons();
+    requestAnimationFrame(gameLoop);
+  </script>
+ </body>
+</html>
